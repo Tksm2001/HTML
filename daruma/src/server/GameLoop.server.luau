@@ -12,6 +12,11 @@ local remote = Instance.new("RemoteEvent")
 remote.Name = "GameEvent"
 remote.Parent = ReplicatedStorage
 
+-- 捕まった人が「やりなおす」ボタンを押したときに届く
+local respawnRequest = Instance.new("RemoteEvent")
+respawnRequest.Name = "RespawnRequest"
+respawnRequest.Parent = ReplicatedStorage
+
 local stage = StageBuilder.build()
 local daruma = Daruma.new(stage)
 
@@ -28,6 +33,9 @@ local stageIndex = 1
 
 -- 捕まっている人: [Player] = { mini = Part, base = CFrame, parts = {[BasePart]=number} }
 local caught: { [Player]: any } = {}
+
+-- 復活した直後は少しのあいだ捕まらない: [Player] = この時刻まで
+local immuneUntil: { [Player]: number } = {}
 
 local function broadcast(kind: string, data: any?)
 	remote:FireAllClients(kind, data)
@@ -115,6 +123,7 @@ local function rescue(player: Player)
 			root.Anchored = false
 		end
 	end
+	immuneUntil[player] = os.clock() + Config.RESPAWN_IMMUNITY
 	broadcast("rescued", player.Name)
 end
 
@@ -190,14 +199,29 @@ local function catch(player: Player)
 	broadcast("caught", player.Name)
 end
 
-local function teleportAll()
-	for _, player in Players:GetPlayers() do
-		local root = getRoot(player)
-		if root then
-			root.CFrame = stage.SpawnCFrame * CFrame.new(math.random(-8, 8), 0, math.random(-4, 4))
-		end
+local function teleportToSpawn(player: Player)
+	local root = getRoot(player)
+	if root then
+		root.CFrame = stage.SpawnCFrame * CFrame.new(math.random(-8, 8), 0, math.random(-4, 4))
 	end
 end
+
+local function teleportAll()
+	for _, player in Players:GetPlayers() do
+		teleportToSpawn(player)
+	end
+end
+
+-- 「やりなおす」ボタン: だるまの姿を解いて、スタート地点からやり直す
+-- （仲間に助けてもらえばその場で復活できるので、仲間と遊ぶ意味は残る）
+respawnRequest.OnServerEvent:Connect(function(player)
+	if not caught[player] or phase == "ended" then
+		return
+	end
+	rescue(player)
+	teleportToSpawn(player)
+	broadcast("respawned", player.Name)
+end)
 
 -- nextStage = true なら次のステージへ進む
 local function resetRound(nextStage: boolean)
@@ -291,7 +315,7 @@ RunService.Heartbeat:Connect(function()
 	local now = os.clock()
 	if phase == "look" and now - lookStart > M.GRACE then
 		for _, player in Players:GetPlayers() do
-			if not caught[player] then
+			if not caught[player] and now > (immuneUntil[player] or 0) then
 				local root = getRoot(player)
 				if root and daruma:canSee(root.Position) then
 					if root.AssemblyLinearVelocity.Magnitude > M.MOVE_THRESHOLD then
@@ -315,6 +339,7 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
 	caught[player] = nil
+	immuneUntil[player] = nil
 end)
 local function watchCharacter(player: Player)
 	player.CharacterAdded:Connect(function()

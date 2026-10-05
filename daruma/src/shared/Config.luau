@@ -12,6 +12,8 @@ Config.DARUMA_RADIUS = 12        -- だるまの大きさの基準（横幅の�
 Config.RESCUE_HOLD = 3           -- 救出に必要な長押し秒数
 Config.PAINT_HOLD = 1.5          -- 目入れに必要な長押し秒数
 Config.END_WAIT = 6              -- ラウンド終了後、次に進むまでの秒数
+Config.RESPAWN_BUTTON_DELAY = 2  -- だるまにされてから「やりなおす」ボタンが出るまでの秒数
+Config.RESPAWN_IMMUNITY = 1.5    -- 復活（救出・やりなおし）した直後に捕まらない秒数
 
 -- ステージ。ラウンドが終わるたびに、この順で次へ進む（最後まで行ったら最初に戻る）
 -- 名前は src/server/Stages/ のファイル名

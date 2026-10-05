@@ -68,10 +68,57 @@ local function show(text: string, color: Color3)
 	label.BackgroundColor3 = color
 end
 
+-- 「やりなおす」ボタン（捕まっている間だけ、少し待ってから出る）。R キーでも押せる
+local respawnRequest = ReplicatedStorage:WaitForChild("RespawnRequest")
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
+local UserInputService = game:GetService("UserInputService")
+
+local respawnButton = Instance.new("TextButton")
+respawnButton.Name = "RespawnButton"
+respawnButton.Size = UDim2.fromScale(0.34, 0.09)
+respawnButton.Position = UDim2.fromScale(0.33, 0.78)
+respawnButton.BackgroundColor3 = Color3.fromRGB(240, 180, 20)
+respawnButton.TextColor3 = Color3.fromRGB(40, 20, 0)
+respawnButton.TextScaled = true
+respawnButton.Font = Enum.Font.FredokaOne
+respawnButton.Text = "やりなおす（スタートへ）[R]  Restart"
+respawnButton.Visible = false
+respawnButton.Parent = screen
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0, 14)
+buttonCorner.Parent = respawnButton
+
 -- 捕まっている間は「仲間を待て」を出し続ける
 local amCaught = false
+local caughtCount = 0 -- 捕まるたびに増やす。古い「ボタンを出す予約」を無効にするため
+local function setCaught(state: boolean)
+	amCaught = state
+	caughtCount += 1
+	respawnButton.Visible = false
+	if state then
+		local mine = caughtCount
+		task.delay(Config.RESPAWN_BUTTON_DELAY, function()
+			if amCaught and caughtCount == mine then
+				respawnButton.Visible = true
+			end
+		end)
+	end
+end
 player.CharacterAdded:Connect(function()
-	amCaught = false
+	setCaught(false)
+end)
+
+local function requestRespawn()
+	if respawnButton.Visible then
+		respawnButton.Visible = false
+		respawnRequest:FireServer()
+	end
+end
+respawnButton.Activated:Connect(requestRespawn)
+UserInputService.InputBegan:Connect(function(input, processed)
+	if not processed and input.KeyCode == Enum.KeyCode.R then
+		requestRespawn()
+	end
 end)
 
 remote.OnClientEvent:Connect(function(kind: string, data: any)
@@ -86,13 +133,17 @@ remote.OnClientEvent:Connect(function(kind: string, data: any)
 		show("黒目の側は うごくな！  Freeze on the RED side!", Color3.fromRGB(190, 30, 30))
 	elseif kind == "caught" then
 		if data == player.Name then
-			amCaught = true
+			setCaught(true)
 			show("だるまにされた！ 仲間を待て  You're a daruma! Wait for a friend", Color3.fromRGB(120, 30, 30))
 		end
 	elseif kind == "rescued" then
 		if data == player.Name then
-			amCaught = false
+			setCaught(false)
 			show("たすかった！  Rescued!", Color3.fromRGB(30, 120, 180))
+		end
+	elseif kind == "respawned" then
+		if data == player.Name then
+			show("スタートからやりなおし！  Back to start!", Color3.fromRGB(30, 120, 180))
 		end
 	elseif kind == "win" then
 		show(tostring(data) .. " が目を入れた！  painted the eye!", Color3.fromRGB(240, 180, 20))
