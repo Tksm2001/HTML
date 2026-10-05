@@ -25,6 +25,27 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = label
 
+-- 今のモード（右上の小さな札）
+local badge = Instance.new("TextLabel")
+badge.Name = "ModeBadge"
+badge.Size = UDim2.fromScale(0.14, 0.05)
+badge.Position = UDim2.fromScale(0.84, 0.05)
+badge.TextColor3 = Color3.fromRGB(255, 255, 255)
+badge.TextScaled = true
+badge.Font = Enum.Font.FredokaOne
+badge.Parent = screen
+local badgeCorner = Instance.new("UICorner")
+badgeCorner.CornerRadius = UDim.new(0, 8)
+badgeCorner.Parent = badge
+
+local function updateBadge()
+	local hard = ReplicatedStorage:GetAttribute("Mode") == "hard"
+	badge.Text = hard and "むずかしい HARD" or "ふつう NORMAL"
+	badge.BackgroundColor3 = hard and Color3.fromRGB(150, 20, 30) or Color3.fromRGB(40, 110, 60)
+end
+updateBadge()
+ReplicatedStorage:GetAttributeChangedSignal("Mode"):Connect(updateBadge)
+
 local function show(text: string, color: Color3)
 	label.Text = text
 	label.BackgroundColor3 = color
@@ -45,7 +66,7 @@ remote.OnClientEvent:Connect(function(kind: string, data: any)
 	elseif kind == "wink" then
 		show("目が…？  The eye…?", Color3.fromRGB(200, 150, 20))
 	elseif kind == "look" then
-		show("赤い側は動くな！  FREEZE on red!", Color3.fromRGB(190, 30, 30))
+		show("黒目の側は うごくな！  Freeze on the RED side!", Color3.fromRGB(190, 30, 30))
 	elseif kind == "caught" then
 		if data == player.Name then
 			amCaught = true
@@ -62,5 +83,11 @@ remote.OnClientEvent:Connect(function(kind: string, data: any)
 		show("時間切れ… だるまの勝ち  Time's up, Daruma wins", Color3.fromRGB(60, 60, 60))
 	elseif kind == "round" then
 		show("つぎのラウンド  Next round", Color3.fromRGB(80, 80, 80))
+	elseif kind == "mode" then
+		if data == "hard" then
+			show("むずかしいモード！ 夜のだるまは嘘をつく  HARD: the night Daruma lies", Color3.fromRGB(150, 20, 30))
+		else
+			show("ふつうモード  NORMAL", Color3.fromRGB(40, 110, 60))
+		end
 	end
 end)
