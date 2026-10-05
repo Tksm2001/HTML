@@ -15,7 +15,11 @@
 | `src/server/Stages/Fuji.luau` | ステージ「富士山」: 奥に富士山と湖、五重塔、松と紅葉、五合目の山小屋。障害物は丸太の柵・岩・お地蔵さん |
 | `src/server/Daruma.luau` | だるまの体・顔・目、振り向き、目の入れ替え、視界判定 |
 | `src/server/GameLoop.server.luau` | ラウンド進行、捕まえる、だるま化、救出、目入れ、勝敗 |
-| `src/client/Hud.client.luau` | 画面上部の状態表示 |
+| `src/client/Hud.client.luau` | 画面上部の状態表示、「やりなおす」ボタン |
+| `src/client/Sounds.client.luau` | BGM（ステージごと）と効果音。音の ID は `Config.SOUNDS` |
+| `src/client/Tutorial.client.luau` | 初めての人向けの「あそびかた」（最初の 1 回だけ。左の「?」でいつでも） |
+| `src/server/Progress.luau` | 記録の保存（勝った回数 Wins、連続で遊んだ日数 Streak）。プレイヤー一覧に表示 |
+| `publish/` | 公開用のアイコン・サムネイル・タイトルと説明文（`publish/PUBLISH.md`） |
 
 ラウンドの流れ:
 1. だるまが背を向けている（緑表示）→ 自由に走れる

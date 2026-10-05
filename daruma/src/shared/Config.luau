@@ -15,6 +15,25 @@ Config.END_WAIT = 6              -- ラウンド終了後、次に進むまで�
 Config.RESPAWN_BUTTON_DELAY = 2  -- だるまにされてから「やりなおす」ボタンが出るまでの秒数
 Config.RESPAWN_IMMUNITY = 1.5    -- 復活（救出・やりなおし）した直後に捕まらない秒数
 
+-- 音（Roblox 公式ライブラリの無料音源: APM / ProSoundEffects / DistroKid）。数字は音の ID
+Config.SOUNDS = {
+	bgm = {
+		Shrine = 1842506077,  -- Kawachi Ondo (APM)
+		Shibuya = 125596959051282, -- 想い出のドライブ (DistroKid)
+		Fuji = 1841324848,    -- Wind Song (APM)
+	},
+	turn = 9126267420,    -- 振り向き: 木の重いドン
+	away = 9120972321,    -- 背を向ける: ヒュッ
+	wink = 9116394545,    -- 目のチカチカ: キラキラ
+	caught = 9120222115,  -- だるまにされた: おもちゃのキュッ
+	rescue = 9126073001,  -- 助かった: チーン
+	win = 1840076509,     -- 目を入れた: ファンファーレ
+	lose = 9125585534,    -- 時間切れ: 銅鑼
+}
+Config.BGM_VOLUME = 0.35
+Config.BGM_VOLUME_LOOK = 0.12   -- だるまが見ている間は BGM を小さくして緊張感を出す
+Config.SFX_VOLUME = 0.7
+
 -- ステージ。ラウンドが終わるたびに、この順で次へ進む（最後まで行ったら最初に戻る）
 -- 名前は src/server/Stages/ のファイル名
 Config.STAGE_ORDER = { "Shrine", "Shibuya", "Fuji" }

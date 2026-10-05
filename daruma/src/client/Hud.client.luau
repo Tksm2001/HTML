@@ -25,11 +25,12 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = label
 
--- 今のモード（右上の小さな札）
+-- 今のモード（小さな札）
 local badge = Instance.new("TextLabel")
 badge.Name = "ModeBadge"
-badge.Size = UDim2.fromScale(0.14, 0.05)
-badge.Position = UDim2.fromScale(0.84, 0.05)
+-- 右上は Roblox のプレイヤー一覧（Wins / Streak）が出るので、上の表示のすぐ下に置く
+badge.Size = UDim2.fromScale(0.16, 0.045)
+badge.Position = UDim2.fromScale(0.33, 0.15)
 badge.TextColor3 = Color3.fromRGB(255, 255, 255)
 badge.TextScaled = true
 badge.Font = Enum.Font.FredokaOne
@@ -41,8 +42,8 @@ badgeCorner.Parent = badge
 -- 今のステージ名（モードの札の下）
 local stageLabel = Instance.new("TextLabel")
 stageLabel.Name = "StageLabel"
-stageLabel.Size = UDim2.fromScale(0.14, 0.035)
-stageLabel.Position = UDim2.fromScale(0.84, 0.105)
+stageLabel.Size = UDim2.fromScale(0.16, 0.045)
+stageLabel.Position = UDim2.fromScale(0.51, 0.15)
 stageLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 stageLabel.BackgroundTransparency = 0.4
 stageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -81,7 +82,8 @@ respawnButton.BackgroundColor3 = Color3.fromRGB(240, 180, 20)
 respawnButton.TextColor3 = Color3.fromRGB(40, 20, 0)
 respawnButton.TextScaled = true
 respawnButton.Font = Enum.Font.FredokaOne
-respawnButton.Text = "やりなおす（スタートへ）[R]  Restart"
+-- キーボードがあるときだけ [R] を書く（スマホには無いので）
+respawnButton.Text = UserInputService.KeyboardEnabled and "やりなおす（スタートへ）[R]  Restart" or "やりなおす（スタートへ）  Restart"
 respawnButton.Visible = false
 respawnButton.Parent = screen
 local buttonCorner = Instance.new("UICorner")

@@ -7,6 +7,8 @@ local Lighting = game:GetService("Lighting")
 local Config = require(ReplicatedStorage.Shared.Config)
 local StageBuilder = require(script.Parent.StageBuilder)
 local Daruma = require(script.Parent.Daruma)
+local Progress = require(script.Parent.Progress)
+Progress.start()
 
 local remote = Instance.new("RemoteEvent")
 remote.Name = "GameEvent"
@@ -16,6 +18,14 @@ remote.Parent = ReplicatedStorage
 local respawnRequest = Instance.new("RemoteEvent")
 respawnRequest.Name = "RespawnRequest"
 respawnRequest.Parent = ReplicatedStorage
+
+-- 初めての人向けの説明を閉じたときに届く
+local tutorialDone = Instance.new("RemoteEvent")
+tutorialDone.Name = "TutorialDone"
+tutorialDone.Parent = ReplicatedStorage
+tutorialDone.OnServerEvent:Connect(function(player)
+	Progress.markTutorialSeen(player)
+end)
 
 local stage = StageBuilder.build()
 local daruma = Daruma.new(stage)
@@ -86,6 +96,7 @@ local function buildStage()
 	local name = Config.STAGE_ORDER[stageIndex]
 	StageBuilder.setTheme(stage, name, modeName == "hard")
 	ReplicatedStorage:SetAttribute("StageName", stage.Theme.name .. "  " .. stage.Theme.nameEn)
+	ReplicatedStorage:SetAttribute("StageKey", name) -- BGM の切り替えに使う
 	applyLighting()
 	setHalfColors()
 end
@@ -250,6 +261,12 @@ local function endRound(winnerName: string?)
 	phase = "ended"
 	setHalfColors()
 	if winnerName then
+		-- 捕まっていない全員の勝ち（みんなで協力する意味を出す）
+		for _, p in Players:GetPlayers() do
+			if not caught[p] then
+				Progress.addWin(p)
+			end
+		end
 		daruma:paintSecondEye()
 		-- 完成した顔を見せる
 		if not daruma.isLooking then
