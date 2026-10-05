@@ -30,7 +30,16 @@ local function show(text: string, color: Color3)
 	label.BackgroundColor3 = color
 end
 
+-- 捕まっている間は「仲間を待て」を出し続ける
+local amCaught = false
+player.CharacterAdded:Connect(function()
+	amCaught = false
+end)
+
 remote.OnClientEvent:Connect(function(kind: string, data: any)
+	if amCaught and (kind == "safe" or kind == "wink" or kind == "look") then
+		return
+	end
 	if kind == "safe" then
 		show("にげろ！  RUN!", Color3.fromRGB(30, 140, 60))
 	elseif kind == "wink" then
@@ -39,10 +48,12 @@ remote.OnClientEvent:Connect(function(kind: string, data: any)
 		show("赤い側は動くな！  FREEZE on red!", Color3.fromRGB(190, 30, 30))
 	elseif kind == "caught" then
 		if data == player.Name then
+			amCaught = true
 			show("だるまにされた！ 仲間を待て  You're a daruma! Wait for a friend", Color3.fromRGB(120, 30, 30))
 		end
 	elseif kind == "rescued" then
 		if data == player.Name then
+			amCaught = false
 			show("たすかった！  Rescued!", Color3.fromRGB(30, 120, 180))
 		end
 	elseif kind == "win" then

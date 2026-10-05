@@ -134,7 +134,7 @@ local function catch(player: Player)
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = mini
 	prompt.Triggered:Connect(function(byPlayer)
-		if byPlayer ~= player then
+		if byPlayer ~= player and not caught[byPlayer] then
 			rescue(player)
 		end
 	end)
@@ -172,6 +172,10 @@ local function endRound(winnerName: string?)
 	setHalfColors()
 	if winnerName then
 		daruma:paintSecondEye()
+		-- 完成した顔を見せる
+		if not daruma.isLooking then
+			daruma:turnToFace()
+		end
 		broadcast("win", winnerName)
 	else
 		broadcast("lose", nil)
@@ -226,11 +230,16 @@ end)
 Players.PlayerRemoving:Connect(function(player)
 	caught[player] = nil
 end)
-Players.PlayerAdded:Connect(function(player)
+local function watchCharacter(player: Player)
 	player.CharacterAdded:Connect(function()
 		caught[player] = nil
 	end)
-end)
+end
+Players.PlayerAdded:Connect(watchCharacter)
+-- Studio では、このスクリプトより先に入室している場合がある
+for _, player in Players:GetPlayers() do
+	watchCharacter(player)
+end
 
 -- だるまのリズム
 task.spawn(function()
@@ -247,12 +256,13 @@ task.spawn(function()
 		if phase == "ended" then
 			continue
 		end
+		daruma:turnToFace()
+		-- 入れ替えの予告は、振り向いてから見せる（背中側では目が見えない）。予告中はまだ捕まえない
 		if math.random() < Config.EYE_SWAP_CHANCE then
 			broadcast("wink", nil)
 			daruma:wink()
 			daruma:swapEye()
 		end
-		daruma:turnToFace()
 		lookStart = os.clock()
 		phase = "look"
 		setHalfColors()
