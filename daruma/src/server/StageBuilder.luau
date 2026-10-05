@@ -2,6 +2,7 @@
 -- テーマ: だるま神社。参道（石畳）に鳥居が並び、奥の拝殿の前に巨大だるまが座っている。
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 
@@ -157,6 +158,82 @@ local function shrine(parent: Instance, z: number)
 	part({ Name = "Shimenawa", Shape = Enum.PartType.Cylinder, Size = Vector3.new(34, 1.4, 1.4), Position = Vector3.new(0, 14.6, z + 9.5), Color = Color3.fromRGB(215, 190, 120), Material = Enum.Material.Fabric, Parent = folder })
 	for _, x in { -10, 0, 10 } do
 		part({ Name = "Shide", Size = Vector3.new(1, 3, 0.1), Position = Vector3.new(x, 12.6, z + 9.6), Color = Color3.fromRGB(255, 255, 255), Parent = folder })
+	end
+end
+
+-- 絵馬掛け: 壁際から中央線の少し先までふさぐ木の柵。飛び越えられない高さ。
+-- 中央線をまたぐので、抜けるには反対側の半分へ渡るしかない
+local EMA_COLORS = { Color3.fromRGB(225, 195, 140), Color3.fromRGB(235, 210, 160), Color3.fromRGB(210, 180, 125) }
+local function emaRack(parent: Instance, side: string, z: number)
+	local folder = Instance.new("Folder")
+	folder.Name = "EmaRack"
+	folder.Parent = parent
+	local halfW = Config.FIELD_WIDTH / 2
+	local sign = side == "L" and -1 or 1
+	local inner, outer = -4, halfW -- inner がマイナス = 中央線を越えて反対側に 4 スタッドはみ出す
+	local length = outer - inner
+	local cx = sign * (inner + outer) / 2
+	local h = 8
+	for _, x in { sign * (inner + 0.6), sign * (outer - 0.6) } do
+		part({ Name = "Post", Size = Vector3.new(1.2, h, 1.2), Position = Vector3.new(x, h / 2 + 0.5, z), Color = WOOD, Material = Enum.Material.Wood, Parent = folder })
+	end
+	-- 板（ここで道がふさがる）と小さな屋根
+	-- 板の上端は床から 8 以上（ふつうのジャンプでは届かない）
+	part({ Name = "Board", Size = Vector3.new(length, h, 0.6), Position = Vector3.new(cx, h / 2 + 0.5, z), Color = Color3.fromRGB(135, 95, 60), Material = Enum.Material.WoodPlanks, Parent = folder })
+	part({ Name = "Roof", Size = Vector3.new(length + 2, 0.6, 2.6), Position = Vector3.new(cx, h + 0.8, z), Color = BLACK, Parent = folder })
+	-- 絵馬（両面）
+	local rng = Random.new(z * 7 + sign)
+	for i = 0, math.floor(length / 1.8) - 1 do
+		for _, dz in { -0.45, 0.45 } do
+			for _, y in { 3, 5.2 } do
+				if rng:NextNumber() < 0.75 then
+					part({
+						Name = "Ema",
+						Size = Vector3.new(1.4, 1, 0.15),
+						CFrame = CFrame.new(sign * (inner + 1.4 + i * 1.8), y, z + dz) * CFrame.Angles(0, 0, rng:NextNumber(-0.15, 0.15)),
+						Color = EMA_COLORS[rng:NextInteger(1, #EMA_COLORS)],
+						Material = Enum.Material.Wood,
+						CanCollide = false,
+						Parent = folder,
+					})
+				end
+			end
+		end
+	end
+end
+
+-- 賽銭箱
+local function saisenbako(parent: Instance, x: number, z: number)
+	local folder = Instance.new("Folder")
+	folder.Name = "Saisenbako"
+	folder.Parent = parent
+	part({ Name = "Box", Size = Vector3.new(7, 3.6, 4), Position = Vector3.new(x, 2.3, z), Color = WOOD, Material = Enum.Material.WoodPlanks, Parent = folder })
+	for i = -2, 2 do
+		part({ Name = "Slat", Size = Vector3.new(6.6, 0.4, 0.5), Position = Vector3.new(x, 4.3, z + i * 0.75), Color = Color3.fromRGB(80, 50, 30), Parent = folder })
+	end
+	local front = part({ Name = "Front", Size = Vector3.new(4, 1.6, 0.1), CFrame = CFrame.new(x, 2.6, z + 2.06) * CFrame.Angles(0, math.pi, 0), Transparency = 1, CanCollide = false, Parent = folder })
+	sign(front, "奉納", GOLD, Enum.NormalId.Front)
+end
+
+-- 手水鉢（石の水鉢）
+local function basin(parent: Instance, x: number, z: number)
+	local folder = Instance.new("Folder")
+	folder.Name = "Basin"
+	folder.Parent = parent
+	part({ Name = "Stone", Size = Vector3.new(6, 3, 4.5), Position = Vector3.new(x, 2, z), Color = STONE, Material = Enum.Material.Slate, Parent = folder })
+	part({ Name = "Water", Size = Vector3.new(5, 0.2, 3.5), Position = Vector3.new(x, 3.45, z), Color = Color3.fromRGB(70, 140, 190), Material = Enum.Material.Glass, Transparency = 0.3, CanCollide = false, Parent = folder })
+	part({ Name = "Ladle", Shape = Enum.PartType.Cylinder, Size = Vector3.new(4, 0.3, 0.3), CFrame = CFrame.new(x + 0.5, 3.8, z) * CFrame.Angles(0, 0.5, 0), Color = Color3.fromRGB(150, 120, 80), CanCollide = false, Parent = folder })
+end
+
+local function placeObstacles(parent: Instance, list)
+	for _, o in list do
+		if o.kind == "rack" then
+			emaRack(parent, o.side, o.z)
+		elseif o.kind == "box" then
+			saisenbako(parent, o.x, o.z)
+		elseif o.kind == "basin" then
+			basin(parent, o.x, o.z)
+		end
 	end
 end
 
@@ -322,6 +399,16 @@ function StageBuilder.build()
 		modeStands[mode] = stand
 	end
 
+	-- 参道の障害物。むずかしい用の追加分は ServerStorage にしまっておき、モードで出し入れする
+	local obstacles = Instance.new("Folder")
+	obstacles.Name = "Obstacles"
+	obstacles.Parent = folder
+	placeObstacles(obstacles, Config.OBSTACLES.normal)
+	local hardObstacles = Instance.new("Folder")
+	hardObstacles.Name = "HardObstacles"
+	placeObstacles(hardObstacles, Config.OBSTACLES.hard)
+	hardObstacles.Parent = ServerStorage
+
 	-- 灯籠の明かり（夜のモードで目立つ）
 	local lights = {}
 	for _, d in folder:GetDescendants() do
@@ -337,6 +424,7 @@ function StageBuilder.build()
 		Halves = halves,
 		Pedestal = pedestal,
 		ModeStands = modeStands,
+		HardObstacles = hardObstacles,
 		Lights = lights,
 		SpawnCFrame = CFrame.new(0, 4, Config.SPAWN_Z),
 	}

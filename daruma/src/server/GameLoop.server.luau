@@ -227,6 +227,8 @@ local function setMode(name: string)
 	M = Config.MODES[name]
 	ReplicatedStorage:SetAttribute("Mode", name)
 	applyLighting()
+	-- むずかしいモードの障害物を出し入れ
+	stage.HardObstacles.Parent = name == "hard" and stage.Folder or game:GetService("ServerStorage")
 end
 setMode("normal")
 

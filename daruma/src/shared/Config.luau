@@ -13,6 +13,30 @@ Config.RESCUE_HOLD = 3           -- 救出に必要な長押し秒数
 Config.PAINT_HOLD = 1.5          -- 目入れに必要な長押し秒数
 Config.END_WAIT = 6              -- ラウンド終了後、次に進むまでの秒数
 
+-- 参道の障害物。左右を交互にふさいで、ときどき危ない側へ渡らないと進めないようにする
+--   rack: 絵馬掛け（片側の半分と中央線をふさぐ柵）。side = "L"（x がマイナス側）/ "R"
+--   box: 賽銭箱、basin: 手水鉢（回り込む小さな障害物）
+Config.OBSTACLES = {
+	normal = {
+		{ kind = "rack", side = "L", z = 50 },
+		{ kind = "rack", side = "R", z = 20 },
+		{ kind = "rack", side = "L", z = -10 },
+		{ kind = "rack", side = "R", z = -40 },
+		{ kind = "box", x = 8, z = 35 },
+		{ kind = "box", x = -10, z = 5 },
+		{ kind = "basin", x = -12, z = -20 },
+		{ kind = "basin", x = 10, z = -55 },
+	},
+	-- むずかしいモードで追加される分
+	hard = {
+		{ kind = "rack", side = "R", z = 64 },
+		{ kind = "rack", side = "L", z = 35 },
+		{ kind = "rack", side = "R", z = 5 },
+		{ kind = "rack", side = "L", z = -28 },
+		{ kind = "rack", side = "L", z = -58 },
+	},
+}
+
 -- モードごとの数値
 --   SAFE_*: 背を向けている秒数 / LOOK_*: こちらを見ている秒数
 --   GRACE: 振り向いた直後、動いていても見逃す猶予
