@@ -23,6 +23,9 @@ local roundStart = os.clock()
 local modeName = "normal"
 local M = Config.MODES.normal
 
+-- 今のステージ（Config.STAGE_ORDER の何番目か）
+local stageIndex = 1
+
 -- 捕まっている人: [Player] = { mini = Part, base = CFrame, parts = {[BasePart]=number} }
 local caught: { [Player]: any } = {}
 
@@ -45,32 +48,38 @@ local function setHalfColors()
 			h.Transparency = 1
 		end
 	end
+	-- 渋谷の歩行者信号: 見ている間は赤、背を向けている間は青
+	local looking = phase == "look"
+	for _, s in stage.Signals do
+		s.red.Color = looking and Color3.fromRGB(255, 40, 40) or Color3.fromRGB(60, 20, 20)
+		s.green.Color = looking and Color3.fromRGB(20, 60, 40) or Color3.fromRGB(40, 230, 120)
+	end
 end
 
--- 空と明かり。ふつう = 夕方、むずかしい = 夜
+-- 空と明かり。ステージごとに決めてある（ふつう = 昼〜夕方、むずかしい = 夜）
 local atmosphere = Instance.new("Atmosphere")
 atmosphere.Parent = Lighting
 local function applyLighting()
-	if modeName == "hard" then
-		Lighting.ClockTime = 20.5
-		Lighting.Brightness = 1
-		Lighting.Ambient = Color3.fromRGB(40, 35, 60)
-		Lighting.OutdoorAmbient = Color3.fromRGB(60, 55, 90)
-		atmosphere.Density = 0.4
-		atmosphere.Color = Color3.fromRGB(90, 80, 130)
-		atmosphere.Decay = Color3.fromRGB(40, 30, 70)
-	else
-		Lighting.ClockTime = 16.4
-		Lighting.Brightness = 2.2
-		Lighting.Ambient = Color3.fromRGB(70, 60, 55)
-		Lighting.OutdoorAmbient = Color3.fromRGB(140, 125, 115)
-		atmosphere.Density = 0.3
-		atmosphere.Color = Color3.fromRGB(255, 220, 190)
-		atmosphere.Decay = Color3.fromRGB(200, 140, 110)
-	end
+	local L = stage.Theme.lighting[modeName]
+	Lighting.ClockTime = L.ClockTime
+	Lighting.Brightness = L.Brightness
+	Lighting.Ambient = L.Ambient
+	Lighting.OutdoorAmbient = L.OutdoorAmbient
+	atmosphere.Density = L.atmosphere.Density
+	atmosphere.Color = L.atmosphere.Color
+	atmosphere.Decay = L.atmosphere.Decay
 	for _, l in stage.Lights do
-		l.Brightness = modeName == "hard" and 3 or 1
+		l.Brightness = L.lights
 	end
+end
+
+-- ステージを今の stageIndex とモードで組み直す
+local function buildStage()
+	local name = Config.STAGE_ORDER[stageIndex]
+	StageBuilder.setTheme(stage, name, modeName == "hard")
+	ReplicatedStorage:SetAttribute("StageName", stage.Theme.name .. "  " .. stage.Theme.nameEn)
+	applyLighting()
+	setHalfColors()
 end
 
 local function getRoot(player: Player): BasePart?
@@ -190,9 +199,14 @@ local function teleportAll()
 	end
 end
 
-local function resetRound()
+-- nextStage = true なら次のステージへ進む
+local function resetRound(nextStage: boolean)
 	for player in caught do
 		rescue(player)
+	end
+	if nextStage then
+		stageIndex = stageIndex % #Config.STAGE_ORDER + 1
+		buildStage()
 	end
 	daruma:reset()
 	teleportAll()
@@ -200,6 +214,9 @@ local function resetRound()
 	phase = "safe"
 	setHalfColors()
 	broadcast("round", nil)
+	if nextStage then
+		broadcast("stage", ReplicatedStorage:GetAttribute("StageName"))
+	end
 end
 
 local function endRound(winnerName: string?)
@@ -219,16 +236,15 @@ local function endRound(winnerName: string?)
 		broadcast("lose", nil)
 	end
 	task.wait(Config.END_WAIT)
-	resetRound()
+	resetRound(true)
 end
 
+-- モードを変えると、今のステージをそのモードの障害物と明かりで組み直す
 local function setMode(name: string)
 	modeName = name
 	M = Config.MODES[name]
 	ReplicatedStorage:SetAttribute("Mode", name)
-	applyLighting()
-	-- むずかしいモードの障害物を出し入れ
-	stage.HardObstacles.Parent = name == "hard" and stage.Folder or game:GetService("ServerStorage")
+	buildStage()
 end
 setMode("normal")
 
@@ -244,8 +260,12 @@ for name, stand in stage.ModeStands do
 		if name == modeName or phase == "ended" then
 			return
 		end
+		-- 先に全員を助けてから組み直す（障害物の中に固定されたままにならないように）
+		for player in caught do
+			rescue(player)
+		end
 		setMode(name)
-		resetRound()
+		resetRound(false)
 		broadcast("mode", name)
 	end)
 end

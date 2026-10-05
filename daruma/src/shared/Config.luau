@@ -13,27 +13,74 @@ Config.RESCUE_HOLD = 3           -- 救出に必要な長押し秒数
 Config.PAINT_HOLD = 1.5          -- 目入れに必要な長押し秒数
 Config.END_WAIT = 6              -- ラウンド終了後、次に進むまでの秒数
 
--- 参道の障害物。左右を交互にふさいで、ときどき危ない側へ渡らないと進めないようにする
---   rack: 絵馬掛け（片側の半分と中央線をふさぐ柵）。side = "L"（x がマイナス側）/ "R"
---   box: 賽銭箱、basin: 手水鉢（回り込む小さな障害物）
+-- ステージ。ラウンドが終わるたびに、この順で次へ進む（最後まで行ったら最初に戻る）
+-- 名前は src/server/Stages/ のファイル名
+Config.STAGE_ORDER = { "Shrine", "Shibuya", "Fuji" }
+
+-- 道の障害物。左右を交互にふさいで、ときどき危ない側へ渡らないと進めないようにする
+--   wall: 片側の半分と中央線をふさぐ大きな障害物。side = "L"（x がマイナス側）/ "R"
+--         神社 = 絵馬掛け、渋谷 = バス、富士山 = 丸太の柵
+--   block: 回り込む中くらいの障害物（神社 = 賽銭箱、渋谷 = タクシー、富士山 = 岩）
+--   round: 回り込む小さな障害物（神社 = 手水鉢、渋谷 = 工事中のコーン、富士山 = お地蔵さん）
+--   hard: むずかしいモードで追加される分
 Config.OBSTACLES = {
-	normal = {
-		{ kind = "rack", side = "L", z = 50 },
-		{ kind = "rack", side = "R", z = 20 },
-		{ kind = "rack", side = "L", z = -10 },
-		{ kind = "rack", side = "R", z = -40 },
-		{ kind = "box", x = 8, z = 35 },
-		{ kind = "box", x = -10, z = 5 },
-		{ kind = "basin", x = -12, z = -20 },
-		{ kind = "basin", x = 10, z = -55 },
+	Shrine = {
+		normal = {
+			{ kind = "wall", side = "L", z = 50 },
+			{ kind = "wall", side = "R", z = 20 },
+			{ kind = "wall", side = "L", z = -10 },
+			{ kind = "wall", side = "R", z = -40 },
+			{ kind = "block", x = 8, z = 35 },
+			{ kind = "block", x = -10, z = 5 },
+			{ kind = "round", x = -12, z = -20 },
+			{ kind = "round", x = 10, z = -55 },
+		},
+		hard = {
+			{ kind = "wall", side = "R", z = 64 },
+			{ kind = "wall", side = "L", z = 35 },
+			{ kind = "wall", side = "R", z = 5 },
+			{ kind = "wall", side = "L", z = -28 },
+			{ kind = "wall", side = "L", z = -58 },
+		},
 	},
-	-- むずかしいモードで追加される分
-	hard = {
-		{ kind = "rack", side = "R", z = 64 },
-		{ kind = "rack", side = "L", z = 35 },
-		{ kind = "rack", side = "R", z = 5 },
-		{ kind = "rack", side = "L", z = -28 },
-		{ kind = "rack", side = "L", z = -58 },
+	Shibuya = {
+		normal = {
+			{ kind = "wall", side = "R", z = 55 },
+			{ kind = "wall", side = "L", z = 25 },
+			{ kind = "wall", side = "R", z = -5 },
+			{ kind = "wall", side = "L", z = -35 },
+			{ kind = "block", x = -12, z = 40 },
+			{ kind = "block", x = 10, z = 10 },
+			{ kind = "block", x = -8, z = -20 },
+			{ kind = "round", x = 12, z = -50 },
+		},
+		hard = {
+			{ kind = "wall", side = "L", z = 68 },
+			{ kind = "wall", side = "R", z = 40 },
+			{ kind = "wall", side = "L", z = 10 },
+			{ kind = "wall", side = "R", z = -20 },
+			{ kind = "wall", side = "R", z = -58 },
+		},
+	},
+	Fuji = {
+		normal = {
+			{ kind = "wall", side = "L", z = 60 },
+			{ kind = "wall", side = "R", z = 30 },
+			{ kind = "wall", side = "L", z = 0 },
+			{ kind = "wall", side = "R", z = -30 },
+			{ kind = "wall", side = "L", z = -56 },
+			{ kind = "block", x = 12, z = 45 },
+			{ kind = "block", x = -10, z = 15 },
+			{ kind = "block", x = 8, z = -15 },
+			{ kind = "round", x = -12, z = -42 },
+		},
+		hard = {
+			{ kind = "wall", side = "R", z = 72 },
+			{ kind = "wall", side = "L", z = 45 },
+			{ kind = "wall", side = "R", z = 15 },
+			{ kind = "wall", side = "L", z = -15 },
+			{ kind = "wall", side = "R", z = -44 },
+		},
 	},
 }
 

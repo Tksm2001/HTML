@@ -1,241 +1,20 @@
 -- ステージをコードで組み立てる。Studioで手で置く物はゼロ。
--- テーマ: だるま神社。参道（石畳）に鳥居が並び、奥の拝殿の前に巨大だるまが座っている。
+-- build: 全ステージ共通の土台（床、左右の半分、中央線、見えない壁、スタート地点、目入れの台座、モード選びの台）
+-- setTheme: ステージごとの景色と障害物（src/server/Stages/ の各ファイル）を付け替える
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Parts = require(script.Parent.Parts)
+local part = Parts.part
+
+local Themes = {}
+for _, name in Config.STAGE_ORDER do
+	Themes[name] = require(script.Parent.Stages[name])
+end
 
 local StageBuilder = {}
-
-local VERMILION = Color3.fromRGB(215, 60, 35)
-local BLACK = Color3.fromRGB(30, 28, 26)
-local STONE = Color3.fromRGB(150, 148, 140)
-local WOOD = Color3.fromRGB(110, 72, 45)
-local GOLD = Color3.fromRGB(225, 175, 55)
-
-local function part(props: { [string]: any }): Part
-	local p = Instance.new("Part")
-	p.Anchored = true
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.Material = Enum.Material.SmoothPlastic
-	local parent = props.Parent
-	props.Parent = nil
-	for k, v in props do
-		(p :: any)[k] = v
-	end
-	p.Parent = parent
-	return p
-end
-
--- 縦向きの円柱（Roblox の円柱は X 軸方向なので 90 度倒す）
-local function pillar(parent: Instance, pos: Vector3, height: number, width: number, color: Color3, material: Enum.Material?): Part
-	return part({
-		Name = "Pillar",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(height, width, width),
-		CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, math.pi / 2),
-		Color = color,
-		Material = material or Enum.Material.SmoothPlastic,
-		Parent = parent,
-	})
-end
-
--- 看板の文字（板の手前側の面に書く）
-local function sign(p: BasePart, text: string, color: Color3, face: Enum.NormalId?)
-	local gui = Instance.new("SurfaceGui")
-	gui.Face = face or Enum.NormalId.Back
-	gui.LightInfluence = 0
-	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	gui.PixelsPerStud = 12
-	gui.Parent = p
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.fromScale(1, 1)
-	label.BackgroundTransparency = 1
-	label.Text = text
-	label.TextScaled = true
-	label.TextColor3 = color
-	label.Font = Enum.Font.GothamBlack
-	label.Parent = gui
-end
-
--- 鳥居。参道をまたぐ。柱は垣根の外なので邪魔にならない
-local function torii(parent: Instance, z: number, span: number)
-	local folder = Instance.new("Folder")
-	folder.Name = "Torii"
-	folder.Parent = parent
-	local h = 28
-	for _, x in { -span / 2, span / 2 } do
-		pillar(folder, Vector3.new(x, h / 2, z), h, 2.6, VERMILION)
-		pillar(folder, Vector3.new(x, 1.5, z), 3, 3.4, BLACK)
-	end
-	-- 貫（ぬき）: 下の横木
-	part({ Name = "Nuki", Size = Vector3.new(span + 6, 1.6, 1.4), Position = Vector3.new(0, h - 6, z), Color = VERMILION, Parent = folder })
-	-- 笠木（かさぎ）: 上の横木。黒い屋根付き
-	part({ Name = "Kasagi", Size = Vector3.new(span + 12, 1.8, 2.6), Position = Vector3.new(0, h - 0.6, z), Color = VERMILION, Parent = folder })
-	part({ Name = "KasagiTop", Size = Vector3.new(span + 16, 1.2, 3.2), Position = Vector3.new(0, h + 0.9, z), Color = BLACK, Parent = folder })
-	-- 額（がく）
-	part({ Name = "Gakuzuka", Size = Vector3.new(1.4, 4.6, 1.2), Position = Vector3.new(0, h - 3.5, z), Color = VERMILION, Parent = folder })
-	-- 正面（Front）が参道の手前側を向くように 180 度回す
-	local plaque = part({ Name = "Plaque", Size = Vector3.new(4.5, 6, 0.6), CFrame = CFrame.new(0, h - 3.5, z + 0.9) * CFrame.Angles(0, math.pi, 0), Color = BLACK, Parent = folder })
-	sign(plaque, "達\n磨", GOLD, Enum.NormalId.Front)
-end
-
--- 石灯籠
-local function lantern(parent: Instance, x: number, z: number)
-	local folder = Instance.new("Folder")
-	folder.Name = "Lantern"
-	folder.Parent = parent
-	part({ Size = Vector3.new(3.2, 1, 3.2), Position = Vector3.new(x, 1, z), Color = STONE, Material = Enum.Material.Slate, Parent = folder })
-	pillar(folder, Vector3.new(x, 3.5, z), 4, 1.3, STONE, Enum.Material.Slate)
-	part({ Size = Vector3.new(3.2, 0.6, 3.2), Position = Vector3.new(x, 5.8, z), Color = STONE, Material = Enum.Material.Slate, Parent = folder })
-	local light = part({
-		Name = "Light",
-		Size = Vector3.new(2.2, 2, 2.2),
-		Position = Vector3.new(x, 7.1, z),
-		Color = Color3.fromRGB(255, 205, 130),
-		Material = Enum.Material.Neon,
-		Transparency = 0.15,
-		Parent = folder,
-	})
-	local pl = Instance.new("PointLight")
-	pl.Color = Color3.fromRGB(255, 190, 120)
-	pl.Range = 18
-	pl.Brightness = 2
-	pl.Parent = light
-	part({ Size = Vector3.new(4, 0.8, 4), Position = Vector3.new(x, 8.5, z), Color = STONE, Material = Enum.Material.Slate, Parent = folder })
-	part({ Size = Vector3.new(1.2, 1, 1.2), Position = Vector3.new(x, 9.4, z), Color = STONE, Material = Enum.Material.Slate, Parent = folder })
-end
-
--- 桜の木
-local function sakura(parent: Instance, x: number, z: number, scale: number)
-	local folder = Instance.new("Folder")
-	folder.Name = "Sakura"
-	folder.Parent = parent
-	pillar(folder, Vector3.new(x, 5 * scale, z), 10 * scale, 1.8 * scale, Color3.fromRGB(85, 55, 40), Enum.Material.Wood)
-	local pink = Color3.fromRGB(255, 183, 205)
-	for _, o in { Vector3.new(0, 11, 0), Vector3.new(3.5, 9.5, 1.5), Vector3.new(-3, 9.8, -1.5), Vector3.new(0.5, 13.5, -1) } do
-		part({
-			Shape = Enum.PartType.Ball,
-			Size = Vector3.one * (o.Y > 12 and 6 or 8) * scale,
-			Position = Vector3.new(x, 0, z) + o * scale,
-			Color = pink,
-			Material = Enum.Material.Grass,
-			CanCollide = false,
-			Parent = folder,
-		})
-	end
-end
-
--- 奥の拝殿。だるまの背中側
-local function shrine(parent: Instance, z: number)
-	local folder = Instance.new("Folder")
-	folder.Name = "Shrine"
-	folder.Parent = parent
-	part({ Name = "Platform", Size = Vector3.new(46, 3, 26), Position = Vector3.new(0, 1.5, z), Color = STONE, Material = Enum.Material.Slate, Parent = folder })
-	part({ Name = "Floor", Size = Vector3.new(40, 0.6, 22), Position = Vector3.new(0, 3.3, z), Color = WOOD, Material = Enum.Material.WoodPlanks, Parent = folder })
-	for _, x in { -18, -6, 6, 18 } do
-		for _, dz in { -9, 9 } do
-			pillar(folder, Vector3.new(x, 9.5, z + dz), 12, 1.8, VERMILION)
-		end
-	end
-	part({ Name = "Wall", Size = Vector3.new(36, 11, 1), Position = Vector3.new(0, 9, z - 9), Color = Color3.fromRGB(245, 238, 225), Parent = folder })
-	-- 切妻屋根: 2 枚の板を山形に
-	local ridgeY, ridgeZ = 22, z
-	for _, s in { 1, -1 } do
-		part({
-			Name = "Roof",
-			Size = Vector3.new(52, 1.4, 17),
-			CFrame = CFrame.new(0, ridgeY - 8.5 * math.sin(0.45), ridgeZ + s * 8.5 * math.cos(0.45)) * CFrame.Angles(s * 0.45, 0, 0),
-			Color = Color3.fromRGB(55, 60, 66),
-			Material = Enum.Material.Slate,
-			Parent = folder,
-		})
-	end
-	part({ Name = "Ridge", Size = Vector3.new(54, 1.8, 1.8), Position = Vector3.new(0, ridgeY + 0.4, ridgeZ), Color = BLACK, Parent = folder })
-	-- しめ縄と紙垂（しで）
-	part({ Name = "Shimenawa", Shape = Enum.PartType.Cylinder, Size = Vector3.new(34, 1.4, 1.4), Position = Vector3.new(0, 14.6, z + 9.5), Color = Color3.fromRGB(215, 190, 120), Material = Enum.Material.Fabric, Parent = folder })
-	for _, x in { -10, 0, 10 } do
-		part({ Name = "Shide", Size = Vector3.new(1, 3, 0.1), Position = Vector3.new(x, 12.6, z + 9.6), Color = Color3.fromRGB(255, 255, 255), Parent = folder })
-	end
-end
-
--- 絵馬掛け: 壁際から中央線の少し先までふさぐ木の柵。飛び越えられない高さ。
--- 中央線をまたぐので、抜けるには反対側の半分へ渡るしかない
-local EMA_COLORS = { Color3.fromRGB(225, 195, 140), Color3.fromRGB(235, 210, 160), Color3.fromRGB(210, 180, 125) }
-local function emaRack(parent: Instance, side: string, z: number)
-	local folder = Instance.new("Folder")
-	folder.Name = "EmaRack"
-	folder.Parent = parent
-	local halfW = Config.FIELD_WIDTH / 2
-	local sign = side == "L" and -1 or 1
-	local inner, outer = -4, halfW -- inner がマイナス = 中央線を越えて反対側に 4 スタッドはみ出す
-	local length = outer - inner
-	local cx = sign * (inner + outer) / 2
-	local h = 8
-	for _, x in { sign * (inner + 0.6), sign * (outer - 0.6) } do
-		part({ Name = "Post", Size = Vector3.new(1.2, h, 1.2), Position = Vector3.new(x, h / 2 + 0.5, z), Color = WOOD, Material = Enum.Material.Wood, Parent = folder })
-	end
-	-- 板（ここで道がふさがる）と小さな屋根
-	-- 板の上端は床から 8 以上（ふつうのジャンプでは届かない）
-	part({ Name = "Board", Size = Vector3.new(length, h, 0.6), Position = Vector3.new(cx, h / 2 + 0.5, z), Color = Color3.fromRGB(135, 95, 60), Material = Enum.Material.WoodPlanks, Parent = folder })
-	part({ Name = "Roof", Size = Vector3.new(length + 2, 0.6, 2.6), Position = Vector3.new(cx, h + 0.8, z), Color = BLACK, Parent = folder })
-	-- 絵馬（両面）
-	local rng = Random.new(z * 7 + sign)
-	for i = 0, math.floor(length / 1.8) - 1 do
-		for _, dz in { -0.45, 0.45 } do
-			for _, y in { 3, 5.2 } do
-				if rng:NextNumber() < 0.75 then
-					part({
-						Name = "Ema",
-						Size = Vector3.new(1.4, 1, 0.15),
-						CFrame = CFrame.new(sign * (inner + 1.4 + i * 1.8), y, z + dz) * CFrame.Angles(0, 0, rng:NextNumber(-0.15, 0.15)),
-						Color = EMA_COLORS[rng:NextInteger(1, #EMA_COLORS)],
-						Material = Enum.Material.Wood,
-						CanCollide = false,
-						Parent = folder,
-					})
-				end
-			end
-		end
-	end
-end
-
--- 賽銭箱
-local function saisenbako(parent: Instance, x: number, z: number)
-	local folder = Instance.new("Folder")
-	folder.Name = "Saisenbako"
-	folder.Parent = parent
-	part({ Name = "Box", Size = Vector3.new(7, 3.6, 4), Position = Vector3.new(x, 2.3, z), Color = WOOD, Material = Enum.Material.WoodPlanks, Parent = folder })
-	for i = -2, 2 do
-		part({ Name = "Slat", Size = Vector3.new(6.6, 0.4, 0.5), Position = Vector3.new(x, 4.3, z + i * 0.75), Color = Color3.fromRGB(80, 50, 30), Parent = folder })
-	end
-	local front = part({ Name = "Front", Size = Vector3.new(4, 1.6, 0.1), CFrame = CFrame.new(x, 2.6, z + 2.06) * CFrame.Angles(0, math.pi, 0), Transparency = 1, CanCollide = false, Parent = folder })
-	sign(front, "奉納", GOLD, Enum.NormalId.Front)
-end
-
--- 手水鉢（石の水鉢）
-local function basin(parent: Instance, x: number, z: number)
-	local folder = Instance.new("Folder")
-	folder.Name = "Basin"
-	folder.Parent = parent
-	part({ Name = "Stone", Size = Vector3.new(6, 3, 4.5), Position = Vector3.new(x, 2, z), Color = STONE, Material = Enum.Material.Slate, Parent = folder })
-	part({ Name = "Water", Size = Vector3.new(5, 0.2, 3.5), Position = Vector3.new(x, 3.45, z), Color = Color3.fromRGB(70, 140, 190), Material = Enum.Material.Glass, Transparency = 0.3, CanCollide = false, Parent = folder })
-	part({ Name = "Ladle", Shape = Enum.PartType.Cylinder, Size = Vector3.new(4, 0.3, 0.3), CFrame = CFrame.new(x + 0.5, 3.8, z) * CFrame.Angles(0, 0.5, 0), Color = Color3.fromRGB(150, 120, 80), CanCollide = false, Parent = folder })
-end
-
-local function placeObstacles(parent: Instance, list)
-	for _, o in list do
-		if o.kind == "rack" then
-			emaRack(parent, o.side, o.z)
-		elseif o.kind == "box" then
-			saisenbako(parent, o.x, o.z)
-		elseif o.kind == "basin" then
-			basin(parent, o.x, o.z)
-		end
-	end
-end
+StageBuilder.Themes = Themes
 
 function StageBuilder.build()
 	local folder = Instance.new("Folder")
@@ -247,13 +26,11 @@ function StageBuilder.build()
 	-- だるまが「こちらを見ている」ときの向き。LookVector がスタート地点を向く。
 	local facing = CFrame.lookAt(darumaPos, darumaPos + Vector3.new(0, 0, 1))
 
-	-- 参道（石畳）
-	part({
+	-- 道の床。色と素材はステージごとに変える
+	local floor = part({
 		Name = "Floor",
 		Size = Vector3.new(Config.FIELD_WIDTH, 1, Config.FIELD_LENGTH),
 		Position = Vector3.new(0, 0, 0),
-		Color = Color3.fromRGB(168, 162, 150),
-		Material = Enum.Material.Cobblestone,
 		Parent = folder,
 	})
 
@@ -277,18 +54,16 @@ function StageBuilder.build()
 		halves[side] = h
 	end
 
-	-- 中央線（しめ縄の色）
-	part({
+	-- 中央線
+	local centerLine = part({
 		Name = "CenterLine",
 		Size = Vector3.new(0.8, 0.3, Config.FIELD_LENGTH),
 		Position = Vector3.new(0, 0.65, 0),
-		Color = Color3.fromRGB(215, 190, 120),
-		Material = Enum.Material.Fabric,
 		CanCollide = false,
 		Parent = folder,
 	})
 
-	-- 見えない壁（落ちないように）と、その外側の赤い垣根
+	-- 見えない壁（落ちないように）。見た目の柵はステージごとに付ける
 	for _, x in { -halfW - 1, halfW + 1 } do
 		part({
 			Name = "Wall",
@@ -297,38 +72,10 @@ function StageBuilder.build()
 			Transparency = 1,
 			Parent = folder,
 		})
-		local fence = Instance.new("Folder")
-		fence.Name = "Fence"
-		fence.Parent = folder
-		for z = -Config.FIELD_LENGTH / 2, Config.FIELD_LENGTH / 2, 10 do
-			part({ Size = Vector3.new(1.2, 4.4, 1.2), Position = Vector3.new(x, 2.2, z), Color = VERMILION, Parent = fence })
-		end
-		for _, y in { 1.6, 3.6 } do
-			part({ Size = Vector3.new(0.6, 0.7, Config.FIELD_LENGTH), Position = Vector3.new(x, y, 0), Color = VERMILION, Parent = fence })
-		end
 	end
-
-	-- 鳥居 3 基（手前ほど大きく見える）
-	for _, z in { 62, 12, -38 } do
-		torii(folder, z, Config.FIELD_WIDTH + 8)
-	end
-
-	-- 石灯籠と桜（垣根の外）
-	for z = -80, 80, 40 do
-		lantern(folder, -halfW - 7, z)
-		lantern(folder, halfW + 7, z)
-	end
-	for i, z in { -70, -25, 25, 75 } do
-		local s = 1 + (i % 2) * 0.2
-		sakura(folder, -halfW - 20, z, s)
-		sakura(folder, halfW + 20, z + 12, s)
-	end
-
-	-- 拝殿（だるまの背中側）
-	shrine(folder, Config.DARUMA_Z - 34)
 
 	-- スタート地点の木の床。灰色のスポーン板は見えなくする
-	part({ Name = "StartDeck", Size = Vector3.new(32, 0.4, 16), Position = Vector3.new(0, 0.7, Config.SPAWN_Z), Color = WOOD, Material = Enum.Material.WoodPlanks, Parent = folder })
+	part({ Name = "StartDeck", Size = Vector3.new(32, 0.4, 16), Position = Vector3.new(0, 0.7, Config.SPAWN_Z), Color = Parts.WOOD, Material = Enum.Material.WoodPlanks, Parent = folder })
 	local spawn = Workspace:FindFirstChildOfClass("SpawnLocation")
 	if spawn then
 		spawn.Transparency = 1
@@ -363,7 +110,7 @@ function StageBuilder.build()
 		Shape = Enum.PartType.Ball,
 		Size = Vector3.new(1.4, 1.4, 1.4),
 		Position = pedestal.Position + Vector3.new(0, 1, 0) + CFrame.Angles(0, 0.4, 0).RightVector * 3.6,
-		Color = BLACK,
+		Color = Parts.BLACK,
 		CanCollide = false,
 		Parent = folder,
 	})
@@ -375,7 +122,7 @@ function StageBuilder.build()
 			Name = "ModeStand_" .. mode,
 			Size = Vector3.new(4, 3, 4),
 			Position = Vector3.new(x, 2, Config.SPAWN_Z - 2),
-			Color = mode == "hard" and Color3.fromRGB(60, 20, 25) or STONE,
+			Color = mode == "hard" and Color3.fromRGB(60, 20, 25) or Parts.STONE,
 			Material = Enum.Material.Slate,
 			Parent = folder,
 		})
@@ -399,35 +146,66 @@ function StageBuilder.build()
 		modeStands[mode] = stand
 	end
 
-	-- 参道の障害物。むずかしい用の追加分は ServerStorage にしまっておき、モードで出し入れする
-	local obstacles = Instance.new("Folder")
-	obstacles.Name = "Obstacles"
-	obstacles.Parent = folder
-	placeObstacles(obstacles, Config.OBSTACLES.normal)
-	local hardObstacles = Instance.new("Folder")
-	hardObstacles.Name = "HardObstacles"
-	placeObstacles(hardObstacles, Config.OBSTACLES.hard)
-	hardObstacles.Parent = ServerStorage
+	return {
+		Folder = folder,
+		Floor = floor,
+		CenterLine = centerLine,
+		DarumaPosition = darumaPos,
+		Facing = facing,
+		Halves = halves,
+		Pedestal = pedestal,
+		ModeStands = modeStands,
+		SpawnCFrame = CFrame.new(0, 4, Config.SPAWN_Z),
+		-- 以下は setTheme で入る
+		ThemeName = nil,
+		Theme = nil,
+		Lights = {},
+		Signals = {},
+	}
+end
 
-	-- 灯籠の明かり（夜のモードで目立つ）
+-- ステージの景色と障害物を付け替える。hard = むずかしいモードの障害物も置く
+function StageBuilder.setTheme(stage, name: string, hard: boolean)
+	if stage.ThemeFolder then
+		stage.ThemeFolder:Destroy()
+	end
+	local theme = Themes[name]
+	local folder = Parts.folder(stage.Folder, "Theme_" .. name)
+	local ctx = {
+		folder = folder,
+		halfW = Config.FIELD_WIDTH / 2,
+		length = Config.FIELD_LENGTH,
+		darumaZ = Config.DARUMA_Z,
+		spawnZ = Config.SPAWN_Z,
+		signals = {},
+	}
+	theme.decorate(ctx)
+	local layout = Config.OBSTACLES[name]
+	for _, o in layout.normal do
+		theme.obstacle(ctx, o)
+	end
+	if hard then
+		for _, o in layout.hard do
+			theme.obstacle(ctx, o)
+		end
+	end
+
+	stage.Floor.Color = theme.floor.color
+	stage.Floor.Material = theme.floor.material
+	stage.CenterLine.Color = theme.centerLine.color
+	stage.CenterLine.Material = theme.centerLine.material
+
 	local lights = {}
 	for _, d in folder:GetDescendants() do
 		if d:IsA("PointLight") then
 			table.insert(lights, d)
 		end
 	end
-
-	return {
-		Folder = folder,
-		DarumaPosition = darumaPos,
-		Facing = facing,
-		Halves = halves,
-		Pedestal = pedestal,
-		ModeStands = modeStands,
-		HardObstacles = hardObstacles,
-		Lights = lights,
-		SpawnCFrame = CFrame.new(0, 4, Config.SPAWN_Z),
-	}
+	stage.ThemeFolder = folder
+	stage.ThemeName = name
+	stage.Theme = theme
+	stage.Lights = lights
+	stage.Signals = ctx.signals
 end
 
 return StageBuilder

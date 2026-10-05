@@ -38,13 +38,30 @@ local badgeCorner = Instance.new("UICorner")
 badgeCorner.CornerRadius = UDim.new(0, 8)
 badgeCorner.Parent = badge
 
+-- 今のステージ名（モードの札の下）
+local stageLabel = Instance.new("TextLabel")
+stageLabel.Name = "StageLabel"
+stageLabel.Size = UDim2.fromScale(0.14, 0.035)
+stageLabel.Position = UDim2.fromScale(0.84, 0.105)
+stageLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+stageLabel.BackgroundTransparency = 0.4
+stageLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+stageLabel.TextScaled = true
+stageLabel.Font = Enum.Font.FredokaOne
+stageLabel.Parent = screen
+local stageCorner = Instance.new("UICorner")
+stageCorner.CornerRadius = UDim.new(0, 8)
+stageCorner.Parent = stageLabel
+
 local function updateBadge()
 	local hard = ReplicatedStorage:GetAttribute("Mode") == "hard"
 	badge.Text = hard and "むずかしい HARD" or "ふつう NORMAL"
 	badge.BackgroundColor3 = hard and Color3.fromRGB(150, 20, 30) or Color3.fromRGB(40, 110, 60)
+	stageLabel.Text = ReplicatedStorage:GetAttribute("StageName") or ""
 end
 updateBadge()
 ReplicatedStorage:GetAttributeChangedSignal("Mode"):Connect(updateBadge)
+ReplicatedStorage:GetAttributeChangedSignal("StageName"):Connect(updateBadge)
 
 local function show(text: string, color: Color3)
 	label.Text = text
@@ -83,6 +100,8 @@ remote.OnClientEvent:Connect(function(kind: string, data: any)
 		show("時間切れ… だるまの勝ち  Time's up, Daruma wins", Color3.fromRGB(60, 60, 60))
 	elseif kind == "round" then
 		show("つぎのラウンド  Next round", Color3.fromRGB(80, 80, 80))
+	elseif kind == "stage" then
+		show("ステージ: " .. tostring(data), Color3.fromRGB(60, 60, 140))
 	elseif kind == "mode" then
 		if data == "hard" then
 			show("むずかしいモード！ 夜のだるまは嘘をつく  HARD: the night Daruma lies", Color3.fromRGB(150, 20, 30))
