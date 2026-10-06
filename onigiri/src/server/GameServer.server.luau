@@ -65,8 +65,9 @@ local function fillSlot(room, n: number, id: string)
 	clearSlot(room, n)
 	local s = room.Slots[n]
 	local m = Designs.build(id, CFrame.new(), room.Folder)
-	m:ScaleTo(0.45)
-	m:PivotTo(s.CFrame * CFrame.new(0, 1.9 * 0.45, 0) * CFrame.Angles(0, math.pi, 0)) -- 道（+Z）の方を向く
+	local scale = 0.55
+	m:ScaleTo(scale)
+	m:PivotTo(s.CFrame * CFrame.new(0, 1.9 * scale, 0) * CFrame.Angles(0, math.pi, 0)) -- 道（+Z）の方を向く
 	s.Model = m
 	s.Id = id
 	s.Part:SetAttribute("Id", id)

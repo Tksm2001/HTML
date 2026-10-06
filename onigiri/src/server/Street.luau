@@ -129,7 +129,7 @@ local function room(parent, index: number)
 	-- 棚: 奥の壁に 3 段、1 段 4 つ
 	local slots = {}
 	for row = 0, 2 do
-		local y = 1.6 + row * 2.3
+		local y = 1.4 + row * 2.5
 		part({ Name = "Shelf", Size = Vector3.new(ROOM_W - 2, 0.25, 2.2), CFrame = CFrame.new(x, y, cz - ROOM_D / 2 + 1.4), Color = WOOD, Material = Enum.Material.Wood, Parent = f })
 		for col = 0, 3 do
 			local sx = x - (ROOM_W - 2) / 2 + (ROOM_W - 2) / 8 + col * (ROOM_W - 2) / 4
@@ -146,10 +146,10 @@ local function room(parent, index: number)
 		part({ Name = "Zabuton", Size = Vector3.new(1.8, 0.3, 1.8), CFrame = CFrame.new(x + o.X, o.Y, cz + o.Z), Color = Color3.fromRGB(90, 110, 170), Material = Enum.Material.Fabric, Parent = f })
 	end
 	-- 明かり
-	local lamp = part({ Name = "Lamp", Size = Vector3.new(2.2, 0.5, 2.2), CFrame = CFrame.new(x, 7.6, cz), Color = Color3.fromRGB(255, 245, 220), Material = Enum.Material.Neon, Parent = f })
+	local lamp = part({ Name = "Lamp", Size = Vector3.new(2.2, 0.5, 2.2), CFrame = CFrame.new(x, 7.6, cz), Color = Color3.fromRGB(255, 240, 210), Material = Enum.Material.SmoothPlastic, Parent = f })
 	local pl = Instance.new("PointLight")
-	pl.Range = 16
-	pl.Brightness = 1.2
+	pl.Range = 14
+	pl.Brightness = 0.6
 	pl.Parent = lamp
 	return { Index = index, Folder = f, X = x, CFrame = CFrame.new(x, 0, cz), Slots = slots, NamePlate = plate, Owner = nil, DoorPosition = Vector3.new(x, 3, ROOM_Z + 3) }
 end
@@ -177,11 +177,10 @@ function Street.build()
 	for x = -STREET_LENGTH / 2 + 10, STREET_LENGTH / 2 - 10, 12 do
 		for _, z in { SHOP_Z - 2.5, ROOM_Z + 2.5 } do
 			pillar(root, Vector3.new(x, 3, z), 6, 0.4, Color3.fromRGB(60, 50, 45))
-			local l = part({ Name = "Lantern", Size = Vector3.new(1.2, 1.6, 1.2), CFrame = CFrame.new(x, 6.6, z), Color = Color3.fromRGB(255, 120, 90), Material = Enum.Material.Neon, Parent = root })
-			local pl = Instance.new("PointLight")
-			pl.Color = Color3.fromRGB(255, 180, 130)
-			pl.Range = 14
-			pl.Parent = l
+			-- 昼なので光らせない（赤い紙の提灯）
+			local l = part({ Name = "Lantern", Size = Vector3.new(1.2, 1.6, 1.2), CFrame = CFrame.new(x, 6.6, z), Color = Color3.fromRGB(240, 90, 70), Material = Enum.Material.SmoothPlastic, Parent = root })
+			part({ Name = "LanternRing", Size = Vector3.new(1.3, 0.12, 1.3), CFrame = CFrame.new(x, 6.6, z), Color = Color3.fromRGB(160, 50, 40), Parent = root })
+			part({ Name = "LanternCap", Size = Vector3.new(0.8, 0.2, 0.8), CFrame = CFrame.new(x, 7.5, z), Color = BLACK, Parent = root })
 		end
 	end
 
