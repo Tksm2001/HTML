@@ -111,3 +111,4 @@
 - **2026-10-06: Roblox に保存（非公開）。** UniverseId 10769588558 / PlaceId 89478150462416。管理画面: https://create.roblox.com/dashboard/creations/experiences/10769588558/overview
 - 宿題: BGM（オフィス用の落ち着いた曲、塔用の緊張する曲を Roblox ライブラリから）、ハヤテとの「先に 25F」レース演出、2 人同時入塔、見た目の売り場（スーツの色）、保存のテスト（API アクセスをオンにして）
 アイコン登録済み。アンケート送信済み → 年齢区分「軽度」（暴力: 軽度/頻繁 — 敵を万年筆で叩く戦闘があるので正直に申告。血・恐怖・ギャンブル・課金はすべて「なし／いいえ」）。残りは待機期間明けに 環境設定 → オーディエンス「公開」だけ。サムネイル 3 枚は手でアップロード。
+- 2026-10-07: Gemini（gemini.google.com、Pro）で AI 画像を作成 → `publish/ai/`。顔絵 5（taku/kanemoto/misaki/hayate/darkmoney、1024px 正方形）、サムネ 3（thumb_tower/office/boss → `thumb1〜3` を AI 版に差し替え）、デザインシート 5（sheet_taku、sheet_enemies1〜3、sheet_people）。次: 顔絵を Roblox に画像アップロードして会話ウィンドウに表示、敵の 3D をシート準拠で作り直し
