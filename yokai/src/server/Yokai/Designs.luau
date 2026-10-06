@@ -377,6 +377,20 @@ end
 
 Designs.ids = { "kappa", "tanuki", "karakasa", "chochin", "kitsune", "nurikabe", "rokurokubi", "tengu" }
 
+-- 金ぴかにする。顔のパーツ以外を金色に寄せて、金属にする
+local FACE_PARTS = { EyeWhite = true, Pupil = true, Shine = true, Blush = true, Mouth = true, Tongue = true, LongTongue = true, Eye = true, Water = true }
+function Designs.paintGold(model: Model)
+	local gold = Color3.fromRGB(255, 205, 60)
+	for _, p in model:GetDescendants() do
+		if p:IsA("BasePart") and p.Name ~= "Root" and not FACE_PARTS[p.Name] then
+			p.Color = p.Color:Lerp(gold, 0.7)
+			p.Material = Enum.Material.Metal
+			p.Reflectance = 0.15
+		end
+	end
+	model:SetAttribute("Gold", true)
+end
+
 -- 妖怪を組み立てて返す。cf = 足元の中心（-Z が正面）
 function Designs.build(id: string, cf: CFrame, parent: Instance): Model
 	local m = Instance.new("Model")
