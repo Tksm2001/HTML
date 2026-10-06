@@ -16,17 +16,15 @@ local GOLD = Color3.fromRGB(255, 205, 60)
 local function onigiriBody(m, cf, w: number, h: number, d: number, color: Color3, material: Enum.Material?)
 	local y0 = 0.3
 	-- 三角: 2 つのくさびを背中合わせに。角は少し短くして、玉で丸める
-	local wh, ww = h - 0.5, w - 0.9
+	local wh, ww = h - 0.3, w - 0.4
 	for _, s in { -1, 1 } do
 		piece(m, "Body", cf * CFrame.new(s * ww / 4, y0 + wh / 2, 0) * CFrame.Angles(0, -s * math.pi / 2, 0), -- 高い側が真ん中に来る向き
 			Vector3.new(d, wh, ww / 2), color, "wedge", material)
 	end
-	-- 下の帯（底を少し厚く）
-	box(m, "Body", cf * CFrame.new(0, y0 + 0.3, 0), Vector3.new(ww, 0.6, d), color, material)
-	-- 角を丸める玉（てっぺんと、下の両角）
-	ball(m, "Body", cf * CFrame.new(0, y0 + wh - 0.1, 0), Vector3.new(d * 0.85, d * 0.85, d), color, material)
+	-- 角を少しだけ丸める小さな玉（三角の辺は隠さない）
+	ball(m, "Body", cf * CFrame.new(0, y0 + wh - 0.25, 0), Vector3.new(0.7, 0.7, d), color, material)
 	for _, s in { -1, 1 } do
-		ball(m, "Body", cf * CFrame.new(s * (ww / 2 - 0.15), y0 + 0.4, 0), Vector3.new(d * 0.85, d * 0.8, d), color, material)
+		ball(m, "Body", cf * CFrame.new(s * (ww / 2 - 0.35), y0 + 0.35, 0), Vector3.new(0.7, 0.7, d), color, material)
 	end
 	return y0 + h / 2
 end
