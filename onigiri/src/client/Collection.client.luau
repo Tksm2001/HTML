@@ -113,7 +113,7 @@ local function makeViewport(parent: Instance, id: string): ViewportFrame
 end
 
 local function buildCells()
-	for i, c in Config.CHARS do
+	for i, c in Config.ALL do
 		local cell = Instance.new("TextButton")
 		cell.Name = c.id
 		cell.LayoutOrder = i
@@ -202,7 +202,7 @@ local function refresh()
 		return
 	end
 	local have = 0
-	for _, c in Config.CHARS do
+	for _, c in Config.ALL do
 		local cell = cells[c.id]
 		local n = inv.counts[c.id] or 0
 		local owned = inv.collected[c.id] == true
@@ -210,11 +210,12 @@ local function refresh()
 			have += 1
 		end
 		cell.Unknown.Visible = not owned
-		cell.Label.Text = owned and c.name or "？？？"
+		cell.Unknown.Text = c.secret and "？\nひみつ" or "？"
+		cell.Label.Text = owned and c.name or (c.secret and "ひみつの子" or "？？？")
 		cell.Count.Text = owned and ("× " .. n .. "  かざれる " .. freeCount(c.id)) or ""
-		cell.Sell.Visible = owned and n >= 2 and not pickingSlot
+		cell.Sell.Visible = owned and n >= 2 and not pickingSlot and not c.secret
 	end
-	title.Text = string.format("図鑑  Collection   %d / %d", have, #Config.CHARS)
+	title.Text = string.format("図鑑  Collection   %d / %d", have, #Config.ALL)
 	if pickingSlot then
 		hint.Text = "かざる子を えらんでね（かざれる数が 1 以上の子）  Pick one to display"
 	else

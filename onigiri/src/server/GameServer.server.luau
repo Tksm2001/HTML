@@ -33,11 +33,13 @@ if spawnLocation then
 	spawnLocation.CFrame = street.SpawnCFrame * CFrame.new(0, -3, 0)
 end
 
-local byId = {}
-local byRarity = { N = {}, R = {}, SR = {}, UR = {} }
-for _, c in Config.CHARS do
-	byId[c.id] = c
-	table.insert(byRarity[c.rarity], c)
+-- 味ちがいも含めた全部の子。ひみつ（secret）は抽選に入れない
+local byId = Config.BY_ID
+local byRarity = { N = {}, R = {}, SR = {}, UR = {}, SEC = {} }
+for _, c in Config.ALL do
+	if not c.secret then
+		table.insert(byRarity[c.rarity], c)
+	end
 end
 
 -- ===== へや =====
@@ -154,7 +156,9 @@ end
 local function rarityWeights()
 	local w = {}
 	for r, info in Config.RARITY do
-		w[r] = info.weight
+		if info.weight > 0 then
+			w[r] = info.weight
+		end
 	end
 	return w
 end

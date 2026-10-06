@@ -12,10 +12,7 @@ local request = ReplicatedStorage:WaitForChild("GameRequest")
 local player = Players.LocalPlayer
 local gui = player:WaitForChild("PlayerGui")
 
-local byId = {}
-for _, c in Config.CHARS do
-	byId[c.id] = c
-end
+local byId = Config.BY_ID
 
 local function corner(p: Instance, r: number)
 	local c = Instance.new("UICorner")

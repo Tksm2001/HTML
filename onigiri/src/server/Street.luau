@@ -184,6 +184,30 @@ function Street.build()
 		end
 	end
 
+	-- 道のまわりの舗装（芝生を隠す）と、奥に並ぶ背景の建物
+	for _, z in { SHOP_Z + 30, ROOM_Z - 30 } do
+		part({ Name = "Pavement", Size = Vector3.new(STREET_LENGTH + 80, 1, 48), CFrame = CFrame.new(0, -0.55, z), Color = Color3.fromRGB(185, 180, 170), Material = Enum.Material.Concrete, Parent = root })
+	end
+	for _, x in { -STREET_LENGTH / 2 - 30, STREET_LENGTH / 2 + 30 } do
+		part({ Name = "Pavement", Size = Vector3.new(40, 1, 120), CFrame = CFrame.new(x, -0.55, 0), Color = Color3.fromRGB(185, 180, 170), Material = Enum.Material.Concrete, Parent = root })
+	end
+	local rng = Random.new(7)
+	local bldColors = { Color3.fromRGB(215, 205, 190), Color3.fromRGB(190, 200, 210), Color3.fromRGB(225, 215, 200), Color3.fromRGB(200, 190, 180), Color3.fromRGB(180, 195, 185) }
+	for i = 0, 11 do
+		local x = -STREET_LENGTH / 2 + i * (STREET_LENGTH / 11)
+		for _, side in { 1, -1 } do
+			local w = rng:NextNumber(12, 18)
+			local h = rng:NextNumber(14, 30)
+			local z = side * (SHOP_Z + 24) + side * rng:NextNumber(0, 6)
+			local b = part({ Name = "Backdrop", Size = Vector3.new(w, h, 12), CFrame = CFrame.new(x + rng:NextNumber(-3, 3), h / 2, z), Color = bldColors[rng:NextInteger(1, #bldColors)], Material = Enum.Material.Concrete, Parent = root })
+			-- 窓
+			for wy = 4, h - 3, 4 do
+				part({ Name = "Window", Size = Vector3.new(w - 3, 1.6, 0.2), CFrame = CFrame.new(b.Position.X, wy, z - side * 6.1), Color = Color3.fromRGB(120, 150, 180), Material = Enum.Material.Glass, CanCollide = false, Parent = root })
+			end
+			part({ Name = "BackdropRoof", Size = Vector3.new(w + 1, 0.8, 13), CFrame = CFrame.new(b.Position.X, h + 0.4, z), Color = Color3.fromRGB(90, 90, 100), Parent = root })
+		end
+	end
+
 	-- お店（北側）
 	local dagashi = shop(root, -40, 22, Color3.fromRGB(215, 160, 110), "だがしや  DAGASHI", Color3.fromRGB(60, 90, 160))
 	local game = shop(root, -10, 18, Color3.fromRGB(240, 200, 220), "ゲームコーナー  GAME", nil)
@@ -196,6 +220,29 @@ function Street.build()
 		for j = 0, 5 do
 			part({ Size = Vector3.new(0.7, 0.9, 0.5), CFrame = CFrame.new(-42.5 + j, 2.6 + i * 1.6, SHOP_Z + 10.5), Color = Color3.fromHSV((i * 6 + j) / 18, 0.6, 1), Parent = dagashi })
 		end
+	end
+	-- お店の店先の商品台（やおや・さかなや・ぱんや）
+	local function stall(parent, x: number, w: number, items: { Color3 }, shape: string)
+		part({ Name = "Stall", Size = Vector3.new(w - 4, 1.6, 2.2), CFrame = CFrame.new(x, 0.8, SHOP_Z + 2.2), Color = WOOD, Material = Enum.Material.Wood, Parent = parent })
+		local r2 = Random.new(math.floor(x))
+		for i = 1, 10 do
+			local col = items[(i - 1) % #items + 1]
+			local px = x - (w - 4) / 2 + 0.8 + (i - 1) * ((w - 4) - 1.6) / 9
+			local pz = SHOP_Z + 2.2 + r2:NextNumber(-0.5, 0.5)
+			if shape == "ball" then
+				ball(parent, Vector3.new(px, 1.95, pz), 0.75, col)
+			else
+				part({ Size = Vector3.new(0.9, 0.5, 1.4), CFrame = CFrame.new(px, 1.85, pz) * CFrame.Angles(0, r2:NextNumber(-0.3, 0.3), 0), Color = col, Parent = parent })
+			end
+		end
+	end
+	stall(root, 14, 14, { Color3.fromRGB(230, 60, 50), Color3.fromRGB(90, 170, 80), Color3.fromRGB(255, 160, 40), Color3.fromRGB(140, 80, 160) }, "ball")
+	stall(root, 32, 14, { Color3.fromRGB(120, 150, 190), Color3.fromRGB(220, 100, 90), Color3.fromRGB(200, 200, 210) }, "box")
+	stall(root, 52, 18, { Color3.fromRGB(225, 175, 105), Color3.fromRGB(200, 135, 75), Color3.fromRGB(245, 215, 150) }, "ball")
+	-- お店の前の幕と小さな看板
+	for _, info in { { x = 14, t = "本日とくばい" }, { x = 32, t = "朝どれ" }, { x = 52, t = "やきたて" } } do
+		local b = part({ Name = "MiniSign", Size = Vector3.new(3.2, 0.9, 0.1), CFrame = CFrame.new(info.x + 4, 3.0, SHOP_Z - 0.3) * CFrame.Angles(0, math.pi, 0), Color = Color3.fromRGB(255, 250, 235), Parent = root })
+		sign(b, info.t, Color3.fromRGB(200, 50, 50), Enum.NormalId.Front)
 	end
 
 	-- ガチャ 3 台（だがしやの前）とクレーン（ゲームコーナー）

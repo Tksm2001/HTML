@@ -314,22 +314,56 @@ builders.goldonigiri = function(m, cf)
 	end
 end
 
-Designs.ids = { "onigiri", "dango", "tamagoyaki", "takoyaki", "taiyaki", "daifuku", "maguro", "ikura", "kakigori", "purin", "ramen", "goldonigiri" }
+-- 第 2 弾の見た目を合流
+for id, fn in require(script.Parent.Designs2) do
+	builders[id] = fn
+end
 
--- キャラを組み立てて返す。cf = 足元の中心（-Z が正面）
+local Config = require(script.Parent.Parent.Config)
+
+Designs.ids = {}
+for _, c in Config.CHARS do
+	table.insert(Designs.ids, c.id)
+end
+
+-- 味ちがい・ひみつ: 元の子を組んでから、部品の名前ごとに色を変え、頭に小さな飾りを足す
+local function applyVariant(m: Model, def)
+	for _, p in m:GetDescendants() do
+		if p:IsA("BasePart") and def.recolor[p.Name] then
+			p.Color = def.recolor[p.Name]
+		end
+	end
+	if def.accent then
+		local _, size = m:GetBoundingBox()
+		local top = m:GetBoundingBox().Position.Y + size.Y / 2
+		local root = m.PrimaryPart :: BasePart
+		ball(m, "Accent", CFrame.new(root.Position.X, top - 0.35, root.Position.Z - size.Z * 0.18), Vector3.new(0.7, 0.55, 0.6), def.accent)
+		ball(m, "Accent", CFrame.new(root.Position.X + 0.35, top - 0.55, root.Position.Z - size.Z * 0.2), Vector3.new(0.4, 0.35, 0.4), def.accent)
+	end
+end
+
+-- キャラを組み立てて返す。cf = 足元の中心（-Z が正面）。味ちがい・ひみつの id も可
 function Designs.build(id: string, cf: CFrame, parent: Instance): Model
+	local def = Config.BY_ID[id]
+	local baseId = (def and def.base) or id
+	local builder = builders[baseId] or builders.onigiri
+	-- いったん原点で組んでから、まとめて cf へ動かす（第 2 弾の部品は原点基準で書いてある）
 	local m = Instance.new("Model")
 	m.Name = id
 	local root = Instance.new("Part")
 	root.Name = "Root"
 	root.Size = Vector3.new(3.2, 3.8, 2.6)
-	root.CFrame = cf * CFrame.new(0, 1.9, 0)
+	root.CFrame = CFrame.new(0, 1.9, 0)
 	root.Transparency = 1
 	root.Anchored = true
 	root.CanCollide = false
 	root.Parent = m
 	m.PrimaryPart = root
-	builders[id](m, cf)
+	builder(m, CFrame.new())
+	if def and def.base then
+		applyVariant(m, def)
+	end
+	m:PivotTo(cf * CFrame.new(0, 1.9, 0))
 	m.Parent = parent
 	return m
 end
