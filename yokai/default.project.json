@@ -1,0 +1,39 @@
+{
+  "name": "Yokai",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": { "$path": "src/shared" }
+    },
+    "ServerScriptService": {
+      "Game": { "$path": "src/server" }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": { "$path": "src/client" }
+      }
+    },
+    "Workspace": {
+      "Baseplate": {
+        "$className": "Part",
+        "$properties": {
+          "Anchored": true,
+          "Locked": true,
+          "Size": [1024, 16, 1024],
+          "CFrame": { "CFrame": { "position": [0, -8, 0], "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } },
+          "Color": [0.42, 0.62, 0.32],
+          "Material": "Grass"
+        }
+      },
+      "SpawnLocation": {
+        "$className": "SpawnLocation",
+        "$properties": {
+          "Anchored": true,
+          "Neutral": true,
+          "Size": [12, 1, 12],
+          "CFrame": { "CFrame": { "position": [0, 1, 0], "orientation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]] } }
+        }
+      }
+    }
+  }
+}
