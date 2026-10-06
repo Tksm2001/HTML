@@ -102,3 +102,5 @@
 - 2 人でだけ確認できること: 仲間と担ぐ・離れて落とす、お札が他人に当たる、結界で他人を止める。Studio の Test → Clients and Servers（2 人）で
 - テストの注意: 長押し（ProximityPrompt）はキャラとカメラが台座の方を向いていないと出ない。screen_capture 用にカメラを固定している間は一切反応しない
 - 次に足すもの: 妖怪図鑑、見た目の売り場（かかし姿、色違い、飾り）、土曜の新妖怪、公開（かためだるまの手順と同じ。Alt + P）
+
+**2026-10-06: Roblox に保存（非公開）。** UniverseId 10769581597 / PlaceId 137359462020788。管理画面: https://create.roblox.com/dashboard/creations/experiences/10769581597/overview
