@@ -185,8 +185,8 @@ function Street.build()
 	end
 
 	-- 道のまわりの舗装（芝生を隠す）と、奥に並ぶ背景の建物
-	for _, z in { SHOP_Z + 30, ROOM_Z - 30 } do
-		part({ Name = "Pavement", Size = Vector3.new(STREET_LENGTH + 80, 1, 48), CFrame = CFrame.new(0, -0.55, z), Color = Color3.fromRGB(185, 180, 170), Material = Enum.Material.Concrete, Parent = root })
+	for _, z in { SHOP_Z + 27, ROOM_Z - 27 } do
+		part({ Name = "Pavement", Size = Vector3.new(STREET_LENGTH + 80, 1, 58), CFrame = CFrame.new(0, -0.55, z), Color = Color3.fromRGB(185, 180, 170), Material = Enum.Material.Concrete, Parent = root })
 	end
 	for _, x in { -STREET_LENGTH / 2 - 30, STREET_LENGTH / 2 + 30 } do
 		part({ Name = "Pavement", Size = Vector3.new(40, 1, 120), CFrame = CFrame.new(x, -0.55, 0), Color = Color3.fromRGB(185, 180, 170), Material = Enum.Material.Concrete, Parent = root })
