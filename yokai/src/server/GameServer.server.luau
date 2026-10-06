@@ -62,6 +62,49 @@ local function returnHome(entry)
 	tell(owner, "returned", entry.yokai.def.name)
 end
 
+-- ===== 伝説以上は 2 人で担ぐ =====
+-- そばにいる、手のあいた仲間を探す
+local function findHelper(player: Player): Player?
+	local char = player.Character
+	local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return nil
+	end
+	local best, bestD = nil, Config.HELPER_RANGE
+	for _, other in Players:GetPlayers() do
+		if other ~= player and not Carry.get(other) and not Ofuda.isKakashi(other) and not other:GetAttribute("Helping") then
+			local oc = other.Character
+			local orp = oc and oc:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if orp then
+				local d = (orp.Position - root.Position).Magnitude
+				if d < bestD then
+					best, bestD = other, d
+				end
+			end
+		end
+	end
+	return best
+end
+
+-- 担げるか。戻り値: 担げるか, 仲間
+local function canLift(player: Player, def): (boolean, Player?)
+	if (def.carriers or 1) < 2 then
+		return true, nil
+	end
+	-- サーバーに 1 人しかいないときは特別に 1 人で担げる
+	if #Players:GetPlayers() <= 1 then
+		tell(player, "msg", "伝説は本当は 2 人で担ぐ。今は 1 人だから特別に  Legends need 2 carriers; solo for now")
+		return true, nil
+	end
+	local helper = findHelper(player)
+	if not helper then
+		tell(player, "msg", "伝説は重い！ 仲間をそばに呼んで 2 人で担ごう  Legends need 2 carriers. Bring a friend close")
+		return false, nil
+	end
+	tell(helper, "msg", player.DisplayName .. " と一緒に " .. def.name .. " を担いでいる。離れないで！  Carrying together. Stay close!")
+	return true, helper
+end
+
 -- ===== 台座の長押し（担ぐ / 置く / 盗む） =====
 attachPedestalPrompt = function(plot, slot: number)
 	local ped = plot.Pedestals[slot]
@@ -103,8 +146,12 @@ attachPedestalPrompt = function(plot, slot: number)
 					return
 				end
 			end
+			local okLift, helper = canLift(player, ped.Yokai.def)
+			if not okLift then
+				return
+			end
 			local y = Shrines.take(plot, slot)
-			if Carry.give(player, y, plot.Owner, plot, slot) then
+			if Carry.give(player, y, plot.Owner, plot, slot, helper) then
 				refresh()
 				if not mine then
 					tell(player, "msg", "ぬすんだ！ 自分の鳥居まで走れ  Stolen! Run to your torii")
@@ -178,12 +225,17 @@ Parade.onBuy(function(player, w)
 		tell(player, "msg", "両手がふさがっている  Your hands are full")
 		return false
 	end
-	if not Economy.spend(player, w.def.price) then
+	if Economy.coins(player) < w.def.price then
 		tell(player, "msg", "お賽銭が足りない  Not enough coins")
 		return false
 	end
+	local okLift, helper = canLift(player, w.def)
+	if not okLift then
+		return false
+	end
+	Economy.spend(player, w.def.price)
 	local yokai = { def = w.def, gold = w.gold, model = w.model }
-	if Carry.give(player, yokai, player, nil, nil) then
+	if Carry.give(player, yokai, player, nil, nil, helper) then
 		tell(player, "bought", w.def.name)
 		return true
 	end
@@ -214,11 +266,28 @@ request.OnServerEvent:Connect(function(player, kind: string, data: any)
 	end
 end)
 
--- ===== 毎フレーム: 盗んだ物を自分の鳥居まで持ち帰ったら自分の物に。収入。 =====
+-- ===== 毎フレーム: 盗んだ物を自分の鳥居まで持ち帰ったら自分の物に。仲間が離れたら落とす。収入。 =====
 local incomeAcc: { [Player]: number } = {}
 RunService.Heartbeat:Connect(function(dt)
 	for _, player in Players:GetPlayers() do
 		local c = Carry.get(player)
+		if c and c.helper then
+			local char = player.Character
+			local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
+			local hc = c.helper.Character
+			local hroot = hc and hc:FindFirstChild("HumanoidRootPart") :: BasePart?
+			local far = not (root and hroot and c.helper.Parent) or (hroot.Position - root.Position).Magnitude > Config.HELPER_MAX_DISTANCE or Ofuda.isKakashi(c.helper)
+			if far then
+				c.farSince = c.farSince or os.clock()
+				if os.clock() - c.farSince > Config.HELPER_GRACE then
+					tell(player, "msg", "重すぎて落とした！ 仲間が離れた  Too heavy! Your partner left")
+					Carry.drop(player, returnHome)
+					c = nil
+				end
+			else
+				c.farSince = nil
+			end
+		end
 		if c and c.owner ~= player then
 			local char = player.Character
 			local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -320,13 +389,63 @@ task.spawn(function()
 	end
 end)
 
--- Studio でのテスト用: ServerStorage の Cheat を鳴らすとお賽銭が増える。公開版では動かない
+-- ===== 昼と夜 =====
+local Lighting = game:GetService("Lighting")
+task.spawn(function()
+	local atmosphere = Instance.new("Atmosphere")
+	atmosphere.Density = 0.25
+	atmosphere.Parent = Lighting
+	local wasNight = nil
+	while true do
+		local t = (os.clock() % Config.DAY_LENGTH) / Config.DAY_LENGTH -- 0〜1
+		-- 朝 6 時から始まって一周する
+		Lighting.ClockTime = (6 + t * 24) % 24
+		local night = Lighting.ClockTime >= 18.5 or Lighting.ClockTime < 5.5
+		if night ~= wasNight then
+			wasNight = night
+			Village.setNight(night)
+			Parade.setNight(night)
+			Lighting.Brightness = night and 1 or 2.2
+			Lighting.Ambient = night and Color3.fromRGB(55, 50, 80) or Color3.fromRGB(90, 90, 100)
+			Lighting.OutdoorAmbient = night and Color3.fromRGB(70, 65, 110) or Color3.fromRGB(150, 150, 165)
+			atmosphere.Color = night and Color3.fromRGB(110, 100, 160) or Color3.fromRGB(230, 220, 210)
+			tellAll("msg", night and "夜になった。行列にレアが出やすい  Night: rare yokai appear" or "朝になった  Morning")
+		end
+		task.wait(1)
+	end
+end)
+
+-- Studio でのテスト用: ServerStorage の Cheat。公開版では作られない
+--   kind = "coins"（お賽銭を足す）/ "kakashi"（自分をかかしにして落とす）/ "stock"（持ち主のいない神社 N に妖怪を置く）
 if RunService:IsStudio() then
 	local cheat = Instance.new("BindableEvent")
 	cheat.Name = "Cheat"
 	cheat.Parent = game:GetService("ServerStorage")
-	cheat.Event:Connect(function(player: Player, amount: number)
-		Economy.add(player, amount)
+	cheat.Event:Connect(function(player: Player, kind: string, arg: any)
+		if kind == "coins" then
+			Economy.add(player, tonumber(arg) or 1000)
+		elseif kind == "kakashi" then
+			Carry.drop(player, returnHome)
+			Ofuda.makeKakashi(player)
+			tell(player, "kakashi", nil)
+		elseif kind == "night" then
+			Village.setNight(arg == true)
+			Lighting.ClockTime = arg == true and 21 or 12
+		elseif kind == "stock" then
+			-- arg = 神社の番号、または { plot = 番号, id = 妖怪の id }
+			local plotIndex = type(arg) == "table" and arg.plot or tonumber(arg) or 2
+			local plot = village.Plots[plotIndex]
+			local def = Parade.byId[type(arg) == "table" and arg.id or "kappa"] or Parade.byId.kappa
+			local ped, slot = Shrines.freePedestal(plot)
+			if ped then
+				local model = Designs.build(def.id, CFrame.new(), plot.Folder)
+				Shrines.place(plot, slot, { def = def, gold = false, model = model })
+				plot.ProtectedUntil = 0
+				if ped.Refresh then
+					ped.Refresh()
+				end
+			end
+		end
 	end)
 end
 

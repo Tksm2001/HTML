@@ -20,12 +20,24 @@ for _, d in Config.YOKAI do
 end
 Parade.byId = byId
 
+-- 夜はレア・伝説が出やすい
+local night = false
+function Parade.setNight(v: boolean)
+	night = v
+end
+
 local function pickDef()
-	local roll = math.random() * 100
+	local weights = {}
+	local total = 0
+	for _, r in { "common", "rare", "legend" } do
+		weights[r] = Config.PARADE_RARITY_WEIGHTS[r] * ((night and r ~= "common") and Config.NIGHT_RARITY_BONUS or 1)
+		total += weights[r]
+	end
+	local roll = math.random() * total
 	local acc = 0
 	local rarity = "common"
 	for _, r in { "common", "rare", "legend" } do
-		acc += Config.PARADE_RARITY_WEIGHTS[r]
+		acc += weights[r]
 		if roll <= acc then
 			rarity = r
 			break

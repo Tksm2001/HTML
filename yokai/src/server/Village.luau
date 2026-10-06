@@ -16,16 +16,28 @@ local SLOT_OFFSETS = {
 	Vector3.new(-3, 0, 7), Vector3.new(3, 0, 7), Vector3.new(-9, 0, 7), Vector3.new(9, 0, 7),
 }
 
+-- 提灯。昼は紙の色、夜は光る（Village.setNight で切り替え）
+local lamps = {}
 local function lantern(parent: Instance, cf: CFrame)
 	local f = Parts.folder(parent, "Lantern")
 	pillar(f, cf.Position + Vector3.new(0, 2.5, 0), 5, 0.5, WOOD, Enum.Material.Wood)
-	local l = part({ Size = Vector3.new(1.4, 1.8, 1.4), CFrame = cf * CFrame.new(0, 5.6, 0), Color = Color3.fromRGB(255, 215, 150), Material = Enum.Material.Neon, Transparency = 0.1, Parent = f })
+	local l = part({ Size = Vector3.new(1.4, 1.8, 1.4), CFrame = cf * CFrame.new(0, 5.6, 0), Color = Color3.fromRGB(245, 225, 190), Material = Enum.Material.SmoothPlastic, Parent = f })
 	local pl = Instance.new("PointLight")
 	pl.Color = Color3.fromRGB(255, 200, 130)
-	pl.Range = 16
-	pl.Brightness = 1.5
+	pl.Range = 18
+	pl.Brightness = 2
+	pl.Enabled = false
 	pl.Parent = l
 	part({ Size = Vector3.new(1.9, 0.4, 1.9), CFrame = cf * CFrame.new(0, 6.7, 0), Color = BLACK, Parent = f })
+	table.insert(lamps, { Part = l, Light = pl })
+end
+
+function Village.setNight(night: boolean)
+	for _, lamp in lamps do
+		lamp.Light.Enabled = night
+		lamp.Part.Material = night and Enum.Material.Neon or Enum.Material.SmoothPlastic
+		lamp.Part.Color = night and Color3.fromRGB(255, 215, 150) or Color3.fromRGB(245, 225, 190)
+	end
 end
 
 local function tree(parent: Instance, pos: Vector3, scale: number, leaf: Color3)
@@ -70,17 +82,32 @@ local function buildPlot(root: Folder, index: number)
 	part({ Name = "Ground", Size = Vector3.new(Config.PLOT_SIZE, 1, Config.PLOT_SIZE), CFrame = cf * CFrame.new(0, -0.5, 0), Color = Color3.fromRGB(190, 182, 165), Material = Enum.Material.Cobblestone, Parent = f })
 	part({ Name = "Step", Size = Vector3.new(10, 0.5, 3), CFrame = cf * CFrame.new(0, -0.25, -half - 1.5), Color = STONE, Material = Enum.Material.Slate, Parent = f })
 
-	-- 高い塀（横と後ろ）。正面だけ鳥居の入口が開いている
+	-- 塀: 下は白い漆喰、上は朱色の格子（向こうが見える）。見えない壁で飛び越えられないようにする
+	-- 正面だけ鳥居の入口が開いている
 	local h = 8
-	for _, side in { -1, 1 } do
-		part({ Name = "Fence", Size = Vector3.new(1, h, Config.PLOT_SIZE), CFrame = cf * CFrame.new(side * half, h / 2, 0), Color = VERMILION, Parent = f })
-		part({ Name = "FenceTop", Size = Vector3.new(1.6, 0.6, Config.PLOT_SIZE + 1), CFrame = cf * CFrame.new(side * half, h + 0.3, 0), Color = BLACK, Parent = f })
-		-- 正面の塀（鳥居の左右）
-		part({ Name = "Fence", Size = Vector3.new(half - 5, h, 1), CFrame = cf * CFrame.new(side * (half - (half - 5) / 2), h / 2, -half), Color = VERMILION, Parent = f })
-		part({ Name = "FenceTop", Size = Vector3.new(half - 5, 0.6, 1.6), CFrame = cf * CFrame.new(side * (half - (half - 5) / 2), h + 0.3, -half), Color = BLACK, Parent = f })
+	local plaster = Color3.fromRGB(245, 240, 228)
+	local function fenceRun(center: CFrame, length: number)
+		-- 漆喰の壁（低い）と黒い笠
+		part({ Name = "Plaster", Size = Vector3.new(length, 2.6, 0.9), CFrame = center * CFrame.new(0, 1.3, 0), Color = plaster, Material = Enum.Material.SmoothPlastic, Parent = f })
+		part({ Name = "PlasterCap", Size = Vector3.new(length + 0.4, 0.4, 1.3), CFrame = center * CFrame.new(0, 2.8, 0), Color = BLACK, Parent = f })
+		-- 格子の柱と横木
+		local n = math.floor(length / 2)
+		for i = 0, n do
+			local x = -length / 2 + i * (length / n)
+			part({ Name = "Lattice", Size = Vector3.new(0.35, h - 2.8, 0.35), CFrame = center * CFrame.new(x, 2.8 + (h - 2.8) / 2, 0), Color = VERMILION, CanCollide = false, Parent = f })
+		end
+		for _, y in { 5.2, h } do
+			part({ Name = "LatticeRail", Size = Vector3.new(length + 0.4, 0.4, 0.5), CFrame = center * CFrame.new(0, y, 0), Color = VERMILION, CanCollide = false, Parent = f })
+		end
+		-- 見えない壁
+		part({ Name = "Wall", Size = Vector3.new(length, h + 4, 0.6), CFrame = center * CFrame.new(0, (h + 4) / 2, 0), Transparency = 1, Parent = f })
 	end
-	part({ Name = "Fence", Size = Vector3.new(Config.PLOT_SIZE, h, 1), CFrame = cf * CFrame.new(0, h / 2, half), Color = VERMILION, Parent = f })
-	part({ Name = "FenceTop", Size = Vector3.new(Config.PLOT_SIZE + 1, 0.6, 1.6), CFrame = cf * CFrame.new(0, h + 0.3, half), Color = BLACK, Parent = f })
+	for _, side in { -1, 1 } do
+		fenceRun(cf * CFrame.new(side * half, 0, 0) * CFrame.Angles(0, math.pi / 2, 0), Config.PLOT_SIZE)
+		-- 正面の塀（鳥居の左右）
+		fenceRun(cf * CFrame.new(side * (half - (half - 5) / 2), 0, -half), half - 5)
+	end
+	fenceRun(cf * CFrame.new(0, 0, half), Config.PLOT_SIZE)
 
 	-- 鳥居（入口）
 	local th = 11

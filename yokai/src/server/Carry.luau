@@ -77,8 +77,8 @@ local function weldYokai(model: Model)
 	end
 end
 
--- 担がせる。owner = この妖怪の正式な持ち主（買った直後は player 自身）
-function Carry.give(player: Player, yokai, owner: Player?, fromPlot, fromSlot)
+-- 担がせる。owner = この妖怪の正式な持ち主（買った直後は player 自身）。helper = 一緒に担ぐ仲間（伝説以上）
+function Carry.give(player: Player, yokai, owner: Player?, fromPlot, fromSlot, helper: Player?)
 	local char = player.Character
 	local root = char and char:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -111,9 +111,42 @@ function Carry.give(player: Player, yokai, owner: Player?, fromPlot, fromSlot)
 	end
 
 	hum.WalkSpeed = Config.CARRY_SPEED
-	carrying[player] = { yokai = yokai, mikoshi = mikoshi, owner = owner or player, fromPlot = fromPlot, fromSlot = fromSlot }
+	carrying[player] = { yokai = yokai, mikoshi = mikoshi, owner = owner or player, fromPlot = fromPlot, fromSlot = fromSlot, helper = helper }
 	player:SetAttribute("Carrying", yokai.def.name)
+	if helper then
+		-- 仲間は後ろの担ぎ棒を持つ役。同じ速さにして、印を付ける
+		local hc = helper.Character
+		local hh = hc and hc:FindFirstChildOfClass("Humanoid")
+		if hh then
+			hh.WalkSpeed = Config.CARRY_SPEED
+		end
+		helper:SetAttribute("Helping", yokai.def.name)
+		-- 2 人分の担ぎ棒（後ろに長く）
+		for _, s in { -1, 1 } do
+			local pole = Parts.part({ Name = "LongPole", Shape = Enum.PartType.Cylinder, Size = Vector3.new(5, 0.3, 0.3), Color = Color3.fromRGB(230, 60, 60), Anchored = false, CanCollide = false, Massless = true, Parent = mikoshi })
+			pole.CFrame = base.CFrame * CFrame.new(s * 1.3, -0.1, 4) * CFrame.Angles(0, math.pi / 2, 0)
+			local w = Instance.new("WeldConstraint")
+			w.Part0 = base
+			w.Part1 = pole
+			w.Parent = pole
+		end
+	end
 	return true
+end
+
+-- 仲間の役を外す
+local function releaseHelper(c)
+	local helper = c.helper
+	if not helper then
+		return
+	end
+	c.helper = nil
+	helper:SetAttribute("Helping", nil)
+	local hc = helper.Character
+	local hh = hc and hc:FindFirstChildOfClass("Humanoid")
+	if hh then
+		hh.WalkSpeed = 16
+	end
 end
 
 -- 担いでいる物を外す（置く・落とすの共通）。妖怪を返す
@@ -124,6 +157,7 @@ function Carry.release(player: Player)
 	end
 	carrying[player] = nil
 	player:SetAttribute("Carrying", nil)
+	releaseHelper(c)
 	c.mikoshi:Destroy()
 	local model = c.yokai.model
 	for _, p in model:GetDescendants() do

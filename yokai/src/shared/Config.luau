@@ -60,6 +60,15 @@ Config.KAKASHI_SECONDS = 3
 Config.LOCK_SECONDS = 60
 Config.LOCK_COOLDOWN = 300
 
+-- 伝説以上（担ぐのに 2 人必要）
+Config.HELPER_RANGE = 9          -- 担ぐとき、仲間がこの距離にいれば一緒に担げる
+Config.HELPER_MAX_DISTANCE = 12  -- 担いでいる間、仲間がこれより離れると落とす
+Config.HELPER_GRACE = 2          -- 離れてから落とすまでの猶予（秒）
+
+-- 昼と夜
+Config.DAY_LENGTH = 480          -- 1 日の長さ（秒）。半分が昼、半分が夜
+Config.NIGHT_RARITY_BONUS = 2    -- 夜は レア・伝説 の出やすさが何倍になるか
+
 -- お賽銭
 Config.START_COINS = 60
 Config.OFFLINE_CAP_SECONDS = 7200 -- 留守中に貯まる上限（2 時間分）
