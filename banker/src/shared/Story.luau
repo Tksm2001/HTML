@@ -3,6 +3,15 @@ local Story = {}
 
 Story.NAMES = { kanemoto = "部長 カネモト", misaki = "先輩 ミサキ", hayate = "ハヤテ", taku = "タクト", intern = "インターン", client = "クライアント", darkmoney = "ダークマネー" }
 
+-- 会話ウィンドウの顔絵（Gemini で作った画像を Roblox にアップロードしたもの。publish/ai/portrait_*.jpg）
+Story.PORTRAITS = {
+	taku = "rbxassetid://120915501514139",
+	kanemoto = "rbxassetid://108648234930482",
+	misaki = "rbxassetid://119563545820083",
+	hayate = "rbxassetid://120402113361676",
+	darkmoney = "rbxassetid://71902821619008",
+}
+
 -- 初めてオフィスに来たとき
 Story.INTRO = {
 	{ who = "kanemoto", text = "君が新人のタクトか。ようこそ、ホワイトタワー証券へ。" },

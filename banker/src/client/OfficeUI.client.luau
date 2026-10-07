@@ -165,8 +165,18 @@ dlgStroke.Parent = dlg
 local dlgLimit = Instance.new("UISizeConstraint")
 dlgLimit.MaxSize = Vector2.new(760, 150)
 dlgLimit.Parent = dlg
-local dlgWho = label(dlg, UDim2.fromOffset(300, 30), UDim2.fromOffset(18, 10), "", Color3.fromRGB(255, 220, 120))
-local dlgText = label(dlg, UDim2.new(1, -36, 0, 80), UDim2.fromOffset(18, 44), "", Color3.fromRGB(250, 250, 250), nil, Enum.Font.Gotham)
+-- 顔絵（左）
+local dlgFace = Instance.new("ImageLabel")
+dlgFace.Size = UDim2.fromOffset(118, 118)
+dlgFace.Position = UDim2.fromOffset(14, 16)
+dlgFace.BackgroundColor3 = Color3.fromRGB(255, 248, 230)
+dlgFace.BorderSizePixel = 0
+dlgFace.ScaleType = Enum.ScaleType.Crop
+dlgFace.Visible = false
+dlgFace.Parent = dlg
+corner(dlgFace, 12)
+local dlgWho = label(dlg, UDim2.fromOffset(300, 30), UDim2.fromOffset(146, 10), "", Color3.fromRGB(255, 220, 120))
+local dlgText = label(dlg, UDim2.new(1, -164, 0, 80), UDim2.fromOffset(146, 44), "", Color3.fromRGB(250, 250, 250), nil, Enum.Font.Gotham)
 dlgText.TextScaled = false
 dlgText.TextSize = 20
 dlgText.TextWrapped = true
@@ -195,6 +205,19 @@ local function showLine()
 	end
 	dlg.Visible = true
 	dlgWho.Text = Story.NAMES[l.who] or l.who
+	local face = Story.PORTRAITS[l.who]
+	if face and face ~= "" then
+		dlgFace.Image = face
+		dlgFace.Visible = true
+		dlgWho.Position = UDim2.fromOffset(146, 10)
+		dlgText.Position = UDim2.fromOffset(146, 44)
+		dlgText.Size = UDim2.new(1, -164, 0, 80)
+	else
+		dlgFace.Visible = false
+		dlgWho.Position = UDim2.fromOffset(18, 10)
+		dlgText.Position = UDim2.fromOffset(18, 44)
+		dlgText.Size = UDim2.new(1, -36, 0, 80)
+	end
 	typing = true
 	task.spawn(function()
 		local full = l.text
