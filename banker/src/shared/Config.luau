@@ -21,6 +21,26 @@ Config.RANKS = {
 	{ title = "伝説のバンカー", titleEn = "Legendary Banker", points = 400, floorCap = 99 },
 }
 Config.BOSS_FLOOR = 30 -- 取締役会（ダークマネー）
+
+-- 塔の「章」（見た目と敵の出方が変わる）
+Config.CHAPTERS = {
+	{ from = 1, name = "新人フロア", nameEn = "Rookie Floors", desc = "まずは 1 歩ずつ。赤字くんが多い" },
+	{ from = 5, name = "営業フロア", nameEn = "Sales Floors", desc = "コウモリが円を狙う。ねずみは放っておくと増える" },
+	{ from = 10, name = "会議室フロア", nameEn = "Meeting Floors", desc = "ねむけとカゲに注意。ガラスの向こうは見えない" },
+	{ from = 15, name = "金庫フロア", nameEn = "Vault Floors", desc = "監査ロボとワニの巣。金貨の山はあるが罠も多い" },
+	{ from = 20, name = "役員フロア", nameEn = "Executive Floors", desc = "為替カメレオンと利息ヘビ。ダークコインが現れる" },
+	{ from = 25, name = "闇フロア", nameEn = "Dark Floors", desc = "破産おばけとダークコイン。取締役会はすぐそこ" },
+	{ from = 30, name = "取締役会", nameEn = "The Board", desc = "ダークマネーとの対決" },
+}
+function Config.chapterFor(floor: number)
+	local c = Config.CHAPTERS[1]
+	for _, ch in Config.CHAPTERS do
+		if floor >= ch.from then
+			c = ch
+		end
+	end
+	return c
+end
 Config.EXAM_EVERY = 5 -- 5 の倍数の階は「昇進試験」（固定の間取り＋クライアント戦）
 
 -- ===== 主人公の基本 =====

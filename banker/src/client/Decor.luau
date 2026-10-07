@@ -1,6 +1,7 @@
 -- 塔の階ごとの「章」の見た目（色・材質・小物・明かり）。Dungeon.client から使う。
 local Lighting = game:GetService("Lighting")
 local CollectionService = game:GetService("CollectionService")
+local Config = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"))
 
 local Decor = {}
 

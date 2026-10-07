@@ -114,3 +114,4 @@
 - 2026-10-07: Gemini（gemini.google.com、Pro）で AI 画像を作成 → `publish/ai/`。顔絵 5（taku/kanemoto/misaki/hayate/darkmoney、1024px 正方形）、サムネ 3（thumb_tower/office/boss → `thumb1〜3` を AI 版に差し替え）、デザインシート 5（sheet_taku、sheet_enemies1〜3、sheet_people）。次: 顔絵を Roblox に画像アップロードして会話ウィンドウに表示、敵の 3D をシート準拠で作り直し
 - 2026-10-07: 塔を「章」で見た目分け（`src/client/Decor.luau`）。1〜4 新人フロア / 5〜9 営業 / 10〜14 会議室 / 15〜19 金庫 / 20〜24 役員 / 25〜29 闇 / 30 取締役会。色・材質・壁ぎわの小物（机・観葉植物・棚・金庫・柱・肖像画・浮くコインなど 18 種）・壁の明かり・Lighting（自分の画面だけ）を階で切り替え。壁は上を少し明るいふた、下を巾木に
 - 宿題（利用者の希望）: **BGM をオリジナルで生成**（GPU が空いたらローカルの音楽生成で。オフィス用の落ち着いた曲、塔用の緊張する曲、ボス用）
+- 2026-10-07: 章ごとの敵の出し分け（`Monsters.CHAPTER_BIAS`）、章の最初の階でログに一言（`Config.CHAPTERS[].desc`）、階が変わると暗転＋「5F 営業フロア」の見出し（Dungeon.client `showFloorTitle`）。リスクのカゲ・破産おばけ・部長・ミサキの見た目をシート／顔絵に寄せた

@@ -57,6 +57,9 @@ local function human(m, cf, o)
 	elseif style == "gray" then
 		ball(m, "Hair", cf * CFrame.new(-0.95 * s, headY, 0.2 * s), Vector3.new(0.5, 1.1, 1.3) * s, hair)
 		ball(m, "Hair", cf * CFrame.new(0.95 * s, headY, 0.2 * s), Vector3.new(0.5, 1.1, 1.3) * s, hair)
+		for i = -1, 1 do
+			ball(m, "Hair", cf * CFrame.new(i * 0.4 * s, headY + 0.6 * s, -0.85 * s), Vector3.new(0.5, 0.45, 0.4) * s, hair)
+		end
 	elseif style == "cap" then
 		-- 前髪の束
 		for i = -1, 1 do
@@ -99,6 +102,8 @@ end
 -- 先輩 ミサキ（ポニーテール・売店のエプロン）
 builders.misaki = function(m, cf)
 	local headY = human(m, cf, { suit = Color3.fromRGB(70, 90, 140), tie = Color3.fromRGB(255, 160, 80), hair = Color3.fromRGB(110, 60, 40), hairStyle = "pony", eyeStyle = "happy", mouth = "smile" })
+	ball(m, "Scarf", cf * CFrame.new(0, 2.05, -0.3), Vector3.new(1.3, 0.45, 0.9), Color3.fromRGB(255, 150, 70), Enum.Material.Fabric)
+	box(m, "ScarfTail", cf * CFrame.new(0.35, 1.6, -0.56) * CFrame.Angles(0, 0, 0.3), Vector3.new(0.25, 0.7, 0.06), Color3.fromRGB(255, 150, 70), Enum.Material.Fabric)
 	box(m, "Apron", cf * CFrame.new(0, 1.3, -0.52), Vector3.new(1.3, 1.0, 0.06), Color3.fromRGB(255, 240, 200))
 	box(m, "ApronPocket", cf * CFrame.new(0, 1.1, -0.56), Vector3.new(0.6, 0.35, 0.06), Color3.fromRGB(255, 200, 120))
 end
@@ -198,6 +203,8 @@ builders.risk = function(m, cf)
 	for _, side in { -1, 1 } do
 		ball(m, "GlowEye", cf * CFrame.new(side * 0.4, 1.6, -0.9), Vector3.new(0.45, 0.3, 0.2), Color3.fromRGB(255, 240, 120), Enum.Material.Neon)
 	end
+	Cute.blush(m, cf, Vector3.new(-0.75, 1.2, -0.85), 0.35)
+	Cute.blush(m, cf, Vector3.new(0.75, 1.2, -0.85), 0.35)
 end
 -- 不良債権ワニ（シート準拠: 立ち姿、クリーム色のおなか、大きな口と歯、背中のとげ）
 builders.gator = function(m, cf)
@@ -308,11 +315,14 @@ builders.bankrupt = function(m, cf)
 		local f = ball(m, "Frill", cf * CFrame.new(x, 0.6 + (i % 2) * 0.25, 0), Vector3.new(0.5, 0.7, 1.6), ghost)
 		f.Transparency = 0.1
 	end
-	-- ひっくり返した空の財布
-	box(m, "Wallet", cf * CFrame.new(-1.1, 1.3, -0.5) * CFrame.Angles(0, 0, 0.6), Vector3.new(0.8, 0.5, 0.2), BROWN)
-	Cute.face(m, cf, 0, 2.0, -0.95, { eyeR = 0.32, eyeX = 0.45, mouth = "open", mouthW = 0.5, mouthDrop = 0.55 })
+	-- 空の財布を前で抱えて、泣いている
+	box(m, "Wallet", cf * CFrame.new(0, 1.15, -0.95) * CFrame.Angles(0.3, 0, 0), Vector3.new(0.9, 0.55, 0.3), BROWN)
+	box(m, "WalletFlap", cf * CFrame.new(0, 1.4, -1.0) * CFrame.Angles(0.9, 0, 0), Vector3.new(0.9, 0.35, 0.08), Color3.fromRGB(100, 65, 40))
+	Cute.face(m, cf, 0, 2.05, -0.95, { eyeR = 0.32, eyeX = 0.45, mouth = "open", mouthW = 0.45, mouthDrop = 0.55 })
 	for _, side in { -1, 1 } do
-		local a = ball(m, "Arm", cf * CFrame.new(side * 1.25, 1.6, -0.3), Vector3.new(0.6, 0.5, 0.6), ghost)
+		piece(m, "Brow", cf * CFrame.new(side * 0.45, 2.5, -1.02) * CFrame.Angles(0, 0, -side * 0.5), Vector3.new(0.4, 0.08, 0.06), Color3.fromRGB(120, 120, 140), "box")
+		ball(m, "Tear", cf * CFrame.new(side * 0.55, 1.65, -1.0), Vector3.new(0.18, 0.3, 0.12), Color3.fromRGB(150, 200, 255), Enum.Material.Glass)
+		local a = ball(m, "Arm", cf * CFrame.new(side * 0.6, 1.25, -0.8), Vector3.new(0.5, 0.45, 0.5), ghost)
 		a.Transparency = 0.1
 	end
 end

@@ -26,24 +26,45 @@ for _, m in Monsters.LIST do
 	Monsters.BY_ID[m.id] = m
 end
 
--- 階に応じて 1 体抽選。階が深いほど強くなる（floorMul）
+-- 章ごとに出やすい敵（重みの倍率）
+Monsters.CHAPTER_BIAS = {
+	{ from = 1, ids = { akaji = 3, bubble = 1.5 } },
+	{ from = 5, ids = { fee = 3, inflation = 3, bubble = 1.5 } },
+	{ from = 10, ids = { sleepy = 3, risk = 3, fee = 1.5 } },
+	{ from = 15, ids = { auditor = 3, gator = 3, inflation = 1.5 } },
+	{ from = 20, ids = { fx = 3, interest = 3, darkcoin = 2 } },
+	{ from = 25, ids = { bankrupt = 3, darkcoin = 3, risk = 2 } },
+}
+local function bias(floor: number)
+	local b = Monsters.CHAPTER_BIAS[1]
+	for _, c in Monsters.CHAPTER_BIAS do
+		if floor >= c.from then
+			b = c
+		end
+	end
+	return b.ids
+end
+
+-- 階に応じて 1 体抽選。階が深いほど強くなる（floorMul）。章の敵は出やすい
 function Monsters.roll(rng: Random, floor: number)
 	local total = 0
 	local pool = {}
+	local b = bias(floor)
 	for _, m in Monsters.LIST do
 		if m.weight > 0 and floor >= m.floors[1] and floor <= m.floors[2] then
-			table.insert(pool, m)
-			total += m.weight
+			local w = m.weight * (b[m.id] or 1)
+			table.insert(pool, { m = m, w = w })
+			total += w
 		end
 	end
 	local r = rng:NextNumber() * total
-	for _, m in pool do
-		r -= m.weight
+	for _, e in pool do
+		r -= e.w
 		if r <= 0 then
-			return m
+			return e.m
 		end
 	end
-	return pool[#pool] or Monsters.BY_ID.akaji
+	return pool[#pool] and pool[#pool].m or Monsters.BY_ID.akaji
 end
 
 -- 階による強さの倍率

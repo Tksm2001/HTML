@@ -118,7 +118,11 @@ function Run:enterFloor(n: number)
 		self.intern.x, self.intern.y = self:freeNear(self.px, self.py)
 	end
 	self:updateSight()
-	self:ev({ t = "floor", floor = n })
+	local chapter = Config.chapterFor(n)
+	self:ev({ t = "floor", floor = n, chapter = chapter.name })
+	if chapter.from == n and n > 1 then
+		self:say("◆ " .. n .. "F から「" .. chapter.name .. "」。" .. chapter.desc)
+	end
 	if self.f.special == "exam" then
 		self:say("昇進試験: 気むずかしいクライアントにプレゼンで勝て！")
 	elseif self.f.special == "board" then

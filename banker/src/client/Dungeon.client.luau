@@ -389,6 +389,65 @@ local function syncEntities(s)
 	heroTarget = hcf
 end
 
+-- ===== 階の見出し（暗転して「5F 営業フロア」）=====
+local titleGui = Instance.new("ScreenGui")
+titleGui.Name = "FloorTitle"
+titleGui.ResetOnSpawn = false
+titleGui.DisplayOrder = 20
+titleGui.IgnoreGuiInset = true
+titleGui.Parent = gui
+local black = Instance.new("Frame")
+black.Size = UDim2.fromScale(1, 1)
+black.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+black.BackgroundTransparency = 1
+black.Visible = false
+black.Parent = titleGui
+local titleBig = Instance.new("TextLabel")
+titleBig.AnchorPoint = Vector2.new(0.5, 0.5)
+titleBig.Position = UDim2.fromScale(0.5, 0.46)
+titleBig.Size = UDim2.new(0.8, 0, 0, 90)
+titleBig.BackgroundTransparency = 1
+titleBig.Font = Enum.Font.FredokaOne
+titleBig.TextScaled = true
+titleBig.TextColor3 = Color3.fromRGB(255, 220, 120)
+titleBig.TextStrokeTransparency = 0.5
+titleBig.Parent = black
+local titleSmall = Instance.new("TextLabel")
+titleSmall.AnchorPoint = Vector2.new(0.5, 0.5)
+titleSmall.Position = UDim2.fromScale(0.5, 0.56)
+titleSmall.Size = UDim2.new(0.8, 0, 0, 36)
+titleSmall.BackgroundTransparency = 1
+titleSmall.Font = Enum.Font.Gotham
+titleSmall.TextScaled = true
+titleSmall.TextColor3 = Color3.fromRGB(230, 230, 240)
+titleSmall.Parent = black
+local titleToken = 0
+local function showFloorTitle(floor: number, chapterName: string?)
+	titleToken += 1
+	local my = titleToken
+	local ch = Config.chapterFor(floor)
+	titleBig.Text = floor .. "F"
+	titleSmall.Text = (chapterName or ch.name) .. "   " .. ch.nameEn
+	black.Visible = true
+	black.BackgroundTransparency = 0
+	titleBig.TextTransparency = 0
+	titleSmall.TextTransparency = 0
+	task.delay(1.1, function()
+		if my ~= titleToken then
+			return
+		end
+		local tw = TweenInfo.new(0.6)
+		TweenService:Create(black, tw, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(titleBig, tw, { TextTransparency = 1 }):Play()
+		TweenService:Create(titleSmall, tw, { TextTransparency = 1 }):Play()
+		task.delay(0.65, function()
+			if my == titleToken then
+				black.Visible = false
+			end
+		end)
+	end)
+end
+
 -- ===== 演出 =====
 local function floatText(pos: Vector3, text: string, color: Color3, big: boolean?)
 	local p = part("Fx", CFrame.new(pos + Vector3.new(0, 3, 0)), Vector3.new(0.1, 0.1, 0.1), color)
@@ -525,6 +584,7 @@ local function handleEvents(s)
 			-- 新しい階: 全部作り直す
 			clearAll()
 			currentFloor = e.floor
+			showFloorTitle(e.floor, e.chapter)
 		elseif e.t == "exam_clear" then
 			floatText(cellPos(s.px, s.py), "昇進試験 合格！", Color3.fromRGB(255, 230, 120), true)
 		end
