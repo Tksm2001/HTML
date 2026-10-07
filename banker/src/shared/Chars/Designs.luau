@@ -199,65 +199,70 @@ builders.risk = function(m, cf)
 		ball(m, "GlowEye", cf * CFrame.new(side * 0.4, 1.6, -0.9), Vector3.new(0.45, 0.3, 0.2), Color3.fromRGB(255, 240, 120), Enum.Material.Neon)
 	end
 end
--- 不良債権ワニ: 緑の長い体、大きな口と歯
+-- 不良債権ワニ（シート準拠: 立ち姿、クリーム色のおなか、大きな口と歯、背中のとげ）
 builders.gator = function(m, cf)
-	local green = Color3.fromRGB(80, 150, 80)
-	local belly = Color3.fromRGB(200, 220, 160)
-	box(m, "Body", cf * CFrame.new(0, 0.9, 0.4), Vector3.new(1.8, 1.2, 2.6), green)
-	box(m, "Belly", cf * CFrame.new(0, 0.6, 0.4), Vector3.new(1.4, 0.5, 2.3), belly)
-	-- 口（上あご・下あご）
-	box(m, "Jaw", cf * CFrame.new(0, 1.3, -1.6), Vector3.new(1.4, 0.45, 1.6), green)
-	box(m, "JawLow", cf * CFrame.new(0, 0.75, -1.5), Vector3.new(1.3, 0.35, 1.4), belly)
-	for i = 0, 3 do
-		for _, side in { -1, 1 } do
-			piece(m, "Tooth", cf * CFrame.new(side * 0.5, 1.0, -1.0 - i * 0.35) * CFrame.Angles(math.pi, 0, 0), Vector3.new(0.14, 0.22, 0.14), WHITE, "wedge")
-		end
-	end
-	-- 目（頭の上）
+	local green = Color3.fromRGB(80, 160, 85)
+	local belly = Color3.fromRGB(205, 230, 170)
+	-- 体（立っている）
+	ball(m, "Body", cf * CFrame.new(0, 1.3, 0), Vector3.new(2.2, 2.2, 1.8), green)
+	ball(m, "Belly", cf * CFrame.new(0, 1.15, -0.55), Vector3.new(1.4, 1.5, 0.9), belly)
+	-- 頭と口（前に突き出す）
+	ball(m, "Head", cf * CFrame.new(0, 2.5, -0.2), Vector3.new(1.9, 1.4, 1.6), green)
+	box(m, "Jaw", cf * CFrame.new(0, 2.35, -1.2), Vector3.new(1.4, 0.5, 1.2), green)
+	box(m, "JawLow", cf * CFrame.new(0, 1.95, -1.1), Vector3.new(1.3, 0.35, 1.0), belly)
 	for _, side in { -1, 1 } do
-		ball(m, "EyeBump", cf * CFrame.new(side * 0.55, 1.75, -0.7), Vector3.new(0.6, 0.5, 0.6), green)
-	end
-	Cute.eye(m, cf, Vector3.new(-0.55, 1.85, -0.95), 0.22)
-	Cute.eye(m, cf, Vector3.new(0.55, 1.85, -0.95), 0.22)
-	-- しっぽ、背中のとげ
-	piece(m, "Tail", cf * CFrame.new(0, 0.8, 2.2) * CFrame.Angles(0, 0, 0) * CFrame.Angles(-math.pi / 2, 0, 0), Vector3.new(1.0, 1.4, 0.8), green, "wedge")
-	for i = 0, 3 do
-		piece(m, "Spike", cf * CFrame.new(0, 1.65, -0.4 + i * 0.6) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(0.4, 0.35, 0.3), Color3.fromRGB(60, 110, 60), "wedge")
-	end
-	for _, side in { -1, 1 } do
-		for _, z in { -0.5, 1.2 } do
-			ball(m, "Foot", cf * CFrame.new(side * 1.0, 0.3, z), Vector3.new(0.6, 0.45, 0.7), green)
+		for i = 0, 1 do
+			box(m, "Tooth", cf * CFrame.new(side * (0.45 - i * 0.25), 2.07, -1.55 + i * 0.3), Vector3.new(0.14, 0.22, 0.12), WHITE)
 		end
+		ball(m, "Nostril", cf * CFrame.new(side * 0.3, 2.62, -1.75), Vector3.new(0.18, 0.12, 0.12), Color3.fromRGB(50, 110, 60))
+		ball(m, "EyeBump", cf * CFrame.new(side * 0.55, 3.05, -0.5), Vector3.new(0.65, 0.6, 0.6), green)
 	end
-	Cute.blush(m, cf, Vector3.new(-0.95, 1.2, -0.9), 0.35)
-	Cute.blush(m, cf, Vector3.new(0.95, 1.2, -0.9), 0.35)
+	Cute.eye(m, cf, Vector3.new(-0.55, 3.1, -0.78), 0.24)
+	Cute.eye(m, cf, Vector3.new(0.55, 3.1, -0.78), 0.24)
+	Cute.blush(m, cf, Vector3.new(-0.9, 2.6, -0.75), 0.4)
+	Cute.blush(m, cf, Vector3.new(0.9, 2.6, -0.75), 0.4)
+	-- 背中のとげ、しっぽ
+	for i = 0, 2 do
+		piece(m, "Spike", cf * CFrame.new(0, 2.3 - i * 0.55, 0.85 + i * 0.1) * CFrame.Angles(-0.5, 0, 0) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(0.4, 0.4, 0.3), Color3.fromRGB(60, 120, 65), "wedge")
+	end
+	ball(m, "Tail", cf * CFrame.new(0.3, 0.5, 1.3) * CFrame.Angles(0, 0.4, 0), Vector3.new(0.7, 0.5, 1.6), green)
+	Cute.limbs(m, cf, 1.2, 1.1, { size = 0.5, color = green, footX = 0.5 })
 end
--- 為替カメレオン: 緑に色の斑点、ぐるぐるしっぽ、大きな目
+-- 為替カメレオン（シート準拠: 立ち姿、黄緑に色とりどりの斑点、ぐるぐるしっぽ、出目）
 builders.fx = function(m, cf)
-	local lime = Color3.fromRGB(130, 200, 90)
-	ball(m, "Body", cf * CFrame.new(0, 1.1, 0.1), Vector3.new(2.2, 1.6, 2.6), lime)
-	ball(m, "Head", cf * CFrame.new(0, 1.8, -1.0), Vector3.new(1.5, 1.3, 1.4), lime)
-	piece(m, "Crest", cf * CFrame.new(0, 2.5, -1.0) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(0.8, 0.5, 0.3), Color3.fromRGB(90, 160, 70), "wedge")
-	for i, col in { Color3.fromRGB(255, 170, 60), Color3.fromRGB(80, 160, 255), Color3.fromRGB(255, 100, 150) } do
-		ball(m, "Spot" .. i, cf * CFrame.new(-0.8 + i * 0.6, 1.4 + (i % 2) * 0.3, -0.3 + i * 0.3), Vector3.new(0.5, 0.4, 0.3), col)
-	end
-	-- ぐるぐるしっぽ
-	for i = 0, 5 do
-		local a = i * 0.9
-		ball(m, "Tail", cf * CFrame.new(0, 1.0 + math.sin(a) * 0.5, 1.5 + math.cos(a) * 0.5), Vector3.new(0.5 - i * 0.05, 0.5 - i * 0.05, 0.5 - i * 0.05), lime)
+	local lime = Color3.fromRGB(150, 205, 90)
+	local pale = Color3.fromRGB(215, 235, 160)
+	ball(m, "Body", cf * CFrame.new(0, 1.2, 0), Vector3.new(2.0, 2.0, 1.7), lime)
+	ball(m, "Belly", cf * CFrame.new(0, 1.05, -0.5), Vector3.new(1.2, 1.3, 0.8), pale)
+	ball(m, "Head", cf * CFrame.new(0, 2.5, -0.1), Vector3.new(1.9, 1.5, 1.6), lime)
+	piece(m, "Crest", cf * CFrame.new(0, 3.3, 0.1) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(0.9, 0.5, 0.3), Color3.fromRGB(110, 170, 80), "wedge")
+	-- 斑点
+	local cols = { Color3.fromRGB(255, 170, 60), Color3.fromRGB(80, 160, 255), Color3.fromRGB(255, 100, 150), Color3.fromRGB(255, 220, 80) }
+	local rng = Random.new(4)
+	for i = 1, 9 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local y = rng:NextNumber(0.7, 3.0)
+		local r = y > 1.9 and 0.9 or 0.95
+		local cx, cz = math.cos(a) * r, math.sin(a) * r
+		if cz > -0.2 or math.abs(cx) > 0.5 then
+			ball(m, "Spot", cf * CFrame.new(cx, y, cz), Vector3.new(0.35, 0.3, 0.25), cols[i % #cols + 1])
+		end
 	end
 	-- 出目
 	for _, side in { -1, 1 } do
-		ball(m, "EyeBump", cf * CFrame.new(side * 0.6, 2.05, -1.3), Vector3.new(0.65, 0.65, 0.65), lime)
+		ball(m, "EyeBump", cf * CFrame.new(side * 0.6, 2.75, -0.55), Vector3.new(0.7, 0.7, 0.7), lime)
 	end
-	Cute.eye(m, cf, Vector3.new(-0.6, 2.1, -1.6), 0.24)
-	Cute.eye(m, cf, Vector3.new(0.6, 2.1, -1.6), 0.24)
-	Cute.mouth(m, cf, Vector3.new(0, 1.55, -1.7), 0.45, "smile")
-	for _, side in { -1, 1 } do
-		for _, z in { -0.5, 0.8 } do
-			ball(m, "Foot", cf * CFrame.new(side * 1.0, 0.35, z), Vector3.new(0.5, 0.45, 0.6), lime)
-		end
+	Cute.eye(m, cf, Vector3.new(-0.6, 2.8, -0.88), 0.26)
+	Cute.eye(m, cf, Vector3.new(0.6, 2.8, -0.88), 0.26)
+	Cute.mouth(m, cf, Vector3.new(0, 2.2, -0.88), 0.5, "smile")
+	Cute.blush(m, cf, Vector3.new(-0.95, 2.35, -0.6), 0.35)
+	Cute.blush(m, cf, Vector3.new(0.95, 2.35, -0.6), 0.35)
+	-- ぐるぐるしっぽ（横）
+	for i = 0, 6 do
+		local a = i * 0.85
+		ball(m, "Tail", cf * CFrame.new(1.0 + math.cos(a) * 0.45, 0.8 + math.sin(a) * 0.45, 0.4), Vector3.new(0.5 - i * 0.05, 0.5 - i * 0.05, 0.5 - i * 0.05), lime)
 	end
+	Cute.limbs(m, cf, 1.1, 1.0, { size = 0.45, color = lime, footX = 0.45 })
 end
 -- 利息ヘビ: とぐろを巻いた黄色いヘビ、頭に「%」
 builders.interest = function(m, cf)
@@ -311,29 +316,33 @@ builders.bankrupt = function(m, cf)
 		a.Transparency = 0.1
 	end
 end
--- 監査ロボ: 銀の箱、アンテナ、画面の目
+-- 監査ロボ（シート準拠: 銀の箱、1 つの大きな画面の目、アンテナ、赤いスタンプ）
 builders.auditor = function(m, cf)
-	local metal = Color3.fromRGB(190, 195, 205)
-	box(m, "Body", cf * CFrame.new(0, 1.3, 0), Vector3.new(2.0, 1.8, 1.6), metal, Enum.Material.Metal)
-	box(m, "Head", cf * CFrame.new(0, 2.75, 0), Vector3.new(1.7, 1.1, 1.4), metal, Enum.Material.Metal)
-	box(m, "Screen", cf * CFrame.new(0, 2.75, -0.72), Vector3.new(1.3, 0.75, 0.06), Color3.fromRGB(30, 40, 60))
+	local metal = Color3.fromRGB(195, 200, 210)
+	local dark = Color3.fromRGB(120, 125, 135)
+	box(m, "Body", cf * CFrame.new(0, 1.1, 0), Vector3.new(1.9, 1.5, 1.5), metal, Enum.Material.Metal)
+	box(m, "Head", cf * CFrame.new(0, 2.6, 0), Vector3.new(2.0, 1.5, 1.6), metal, Enum.Material.Metal)
+	-- 画面（1 つの大きな目）
+	box(m, "Screen", cf * CFrame.new(0, 2.6, -0.82), Vector3.new(1.5, 1.1, 0.06), Color3.fromRGB(40, 60, 75))
+	ball(m, "EyeWhite", cf * CFrame.new(0, 2.6, -0.88), Vector3.new(0.7, 0.7, 0.1), Color3.fromRGB(235, 245, 250))
+	ball(m, "Pupil", cf * CFrame.new(0, 2.6, -0.92), Vector3.new(0.4, 0.4, 0.08), Color3.fromRGB(40, 70, 110))
+	ball(m, "Shine", cf * CFrame.new(-0.12, 2.72, -0.95), Vector3.new(0.14, 0.14, 0.06), WHITE)
+	cylY(m, "Antenna", cf * CFrame.new(0, 3.6, 0), 0.6, 0.05, dark)
+	ball(m, "AntennaBall", cf * CFrame.new(0, 3.95, 0), Vector3.new(0.28, 0.28, 0.28), metal, Enum.Material.Metal)
+	-- ランプ
+	ball(m, "Lamp", cf * CFrame.new(-0.4, 1.3, -0.77), Vector3.new(0.2, 0.2, 0.1), Color3.fromRGB(255, 80, 80), Enum.Material.Neon)
+	ball(m, "Lamp", cf * CFrame.new(0.4, 1.3, -0.77), Vector3.new(0.2, 0.2, 0.1), Color3.fromRGB(80, 230, 120), Enum.Material.Neon)
+	-- 腕とスタンプ
 	for _, side in { -1, 1 } do
-		box(m, "ScreenEye", cf * CFrame.new(side * 0.35, 2.8, -0.76), Vector3.new(0.3, 0.3, 0.04), Color3.fromRGB(120, 255, 200), Enum.Material.Neon)
+		box(m, "Arm", cf * CFrame.new(side * 1.15, 1.2, -0.2), Vector3.new(0.35, 1.0, 0.35), dark, Enum.Material.Metal)
 	end
-	box(m, "ScreenMouth", cf * CFrame.new(0, 2.5, -0.76), Vector3.new(0.6, 0.08, 0.04), Color3.fromRGB(120, 255, 200), Enum.Material.Neon)
-	cylY(m, "Antenna", cf * CFrame.new(0, 3.55, 0), 0.6, 0.05, metal)
-	ball(m, "AntennaBall", cf * CFrame.new(0, 3.9, 0), Vector3.new(0.3, 0.3, 0.3), RED, Enum.Material.Neon)
-	-- 胸のランプとスタンプ
-	for i, col in { Color3.fromRGB(255, 80, 80), Color3.fromRGB(255, 220, 80), Color3.fromRGB(80, 255, 120) } do
-		ball(m, "Lamp", cf * CFrame.new(-0.5 + i * 0.35, 1.6, -0.82), Vector3.new(0.2, 0.2, 0.1), col, Enum.Material.Neon)
-	end
-	box(m, "Stamp", cf * CFrame.new(1.3, 1.0, -0.4), Vector3.new(0.4, 0.5, 0.4), RED)
+	cylY(m, "Stamp", cf * CFrame.new(-1.15, 0.75, -0.55), 0.45, 0.22, RED)
+	box(m, "StampHandle", cf * CFrame.new(-1.15, 1.0, -0.55), Vector3.new(0.14, 0.3, 0.14), dark)
 	for _, side in { -1, 1 } do
-		box(m, "Arm", cf * CFrame.new(side * 1.25, 1.3, 0), Vector3.new(0.4, 1.2, 0.4), Color3.fromRGB(120, 125, 135), Enum.Material.Metal)
-		box(m, "Tread", cf * CFrame.new(side * 0.6, 0.25, 0), Vector3.new(0.7, 0.5, 1.7), Color3.fromRGB(60, 60, 70))
+		box(m, "Leg", cf * CFrame.new(side * 0.45, 0.2, 0), Vector3.new(0.5, 0.4, 0.7), dark, Enum.Material.Metal)
 	end
-	Cute.blush(m, cf, Vector3.new(-0.7, 2.45, -0.72), 0.3)
-	Cute.blush(m, cf, Vector3.new(0.7, 2.45, -0.72), 0.3)
+	Cute.blush(m, cf, Vector3.new(-0.8, 2.25, -0.82), 0.3)
+	Cute.blush(m, cf, Vector3.new(0.8, 2.25, -0.82), 0.3)
 end
 -- ダークコイン: 黒い大きなコイン、金のふち、赤い目
 builders.darkcoin = function(m, cf)
