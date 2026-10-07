@@ -117,3 +117,4 @@
 - 2026-10-07: 章ごとの敵の出し分け（`Monsters.CHAPTER_BIAS`）、章の最初の階でログに一言（`Config.CHAPTERS[].desc`）、階が変わると暗転＋「5F 営業フロア」の見出し（Dungeon.client `showFloorTitle`）。リスクのカゲ・破産おばけ・部長・ミサキの見た目をシート／顔絵に寄せた
 - 2026-10-07: BGM 3 曲を MiniMax-Music3（C:\AI\music3、3090）で自作 → `publish/bgm/bgm_office|tower|boss.(wav|mp3)` 各 40 秒。`src/client/Music.client.luau` が場面でクロスフェード（TRACKS の id は Roblox にアップロード後に記入）。ライセンス上「音楽: MiniMax-Music3」の表記が必要 → PUBLISH.md の説明文に入れた。音声のアップロードは Studio MCP ではできない（Creator Hub → 開発アイテム → オーディオ で手動 or Chrome 操作）
 - 2026-10-07: 塔の BGM を章ごとに（7 曲 + オフィス）。MiniMax-Music3 で生成、Creator Hub → 開発用アイテム → オーディオ に Chrome でアップロード（ファイル選択 → 「アセットを N つアップロード」は JS click でないと反応しないことがある）。ID は Music.client の TRACKS
+- 2026-10-07 23:20: **公開版をバージョン 10 に更新**（Alt+P）。それまでの Ctrl+S は「保存」だけで、公開版は 10/6 のバージョン 2 のままだった（スマホで変化が見えなかった原因）。**変更後は必ず Alt+P で公開版を更新し、バージョン履歴の「公開済みバージョン」の印で確認する**
