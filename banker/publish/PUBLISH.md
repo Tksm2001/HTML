@@ -40,6 +40,8 @@ Rise from Intern to Legendary Banker through repeated runs.
 - Promotion exams every 5 floors, final boss on floor 30
 - Daily challenge tower with a floor-reached leaderboard
 - No purchases – everything uses in-game yen
+
+音楽: MiniMax-Music3 で制作 / Music generated with MiniMax-Music3
 ```
 
 ## 公開のしかた

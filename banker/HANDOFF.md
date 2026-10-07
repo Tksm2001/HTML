@@ -115,3 +115,4 @@
 - 2026-10-07: 塔を「章」で見た目分け（`src/client/Decor.luau`）。1〜4 新人フロア / 5〜9 営業 / 10〜14 会議室 / 15〜19 金庫 / 20〜24 役員 / 25〜29 闇 / 30 取締役会。色・材質・壁ぎわの小物（机・観葉植物・棚・金庫・柱・肖像画・浮くコインなど 18 種）・壁の明かり・Lighting（自分の画面だけ）を階で切り替え。壁は上を少し明るいふた、下を巾木に
 - 宿題（利用者の希望）: **BGM をオリジナルで生成**（GPU が空いたらローカルの音楽生成で。オフィス用の落ち着いた曲、塔用の緊張する曲、ボス用）
 - 2026-10-07: 章ごとの敵の出し分け（`Monsters.CHAPTER_BIAS`）、章の最初の階でログに一言（`Config.CHAPTERS[].desc`）、階が変わると暗転＋「5F 営業フロア」の見出し（Dungeon.client `showFloorTitle`）。リスクのカゲ・破産おばけ・部長・ミサキの見た目をシート／顔絵に寄せた
+- 2026-10-07: BGM 3 曲を MiniMax-Music3（C:\AI\music3、3090）で自作 → `publish/bgm/bgm_office|tower|boss.(wav|mp3)` 各 40 秒。`src/client/Music.client.luau` が場面でクロスフェード（TRACKS の id は Roblox にアップロード後に記入）。ライセンス上「音楽: MiniMax-Music3」の表記が必要 → PUBLISH.md の説明文に入れた。音声のアップロードは Studio MCP ではできない（Creator Hub → 開発アイテム → オーディオ で手動 or Chrome 操作）
