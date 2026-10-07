@@ -4,9 +4,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local CollectionService = game:GetService("CollectionService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Designs = require(ReplicatedStorage.Shared.Chars.Designs)
+local Decor = require(script.Parent:WaitForChild("Decor"))
 local event = ReplicatedStorage:WaitForChild("GameEvent")
 local request = ReplicatedStorage:WaitForChild("GameRequest")
 local player = Players.LocalPlayer
@@ -54,21 +56,16 @@ local function part(name, cf, size, color, material, parent)
 	return p
 end
 
--- 階ごとの色（上に行くほど豪華に）
+-- 階ごとの章（色・材質・小物）は Decor にまとめてある
 local function theme(floor: number)
-	if floor >= 30 then
-		return { room = Color3.fromRGB(60, 40, 80), corridor = Color3.fromRGB(45, 30, 60), wall = Color3.fromRGB(40, 30, 50), trim = Color3.fromRGB(255, 205, 60) }
-	elseif floor >= 20 then
-		return { room = Color3.fromRGB(90, 80, 110), corridor = Color3.fromRGB(70, 60, 85), wall = Color3.fromRGB(70, 65, 90), trim = Color3.fromRGB(230, 200, 120) }
-	elseif floor >= 10 then
-		return { room = Color3.fromRGB(120, 130, 150), corridor = Color3.fromRGB(95, 100, 120), wall = Color3.fromRGB(105, 110, 130), trim = Color3.fromRGB(200, 210, 230) }
-	end
-	return { room = Color3.fromRGB(150, 165, 190), corridor = Color3.fromRGB(120, 130, 150), wall = Color3.fromRGB(140, 145, 165), trim = Color3.fromRGB(230, 235, 245) }
+	return Decor.theme(floor)
 end
+local restoreLighting: (() -> ())? = nil
+local props: { [string]: boolean } = {}
 
 local function clearAll()
 	root:ClearAllChildren()
-	tiles, walls, entities, itemModels, trapModels = {}, {}, {}, {}, {}
+	tiles, walls, entities, itemModels, trapModels, props = {}, {}, {}, {}, {}, {}
 	stairsModel, shopModel, hero = nil, nil, nil
 	-- 塔の外は暗い床（空が見えないように）
 	local base = part("Base", CFrame.new(ORIGIN + Vector3.new(Config.MAP_W * CELL / 2, -1.2, Config.MAP_H * CELL / 2)), Vector3.new(Config.MAP_W * CELL + 400, 1.5, Config.MAP_H * CELL + 400), Color3.fromRGB(18, 18, 26), Enum.Material.Slate)
@@ -97,7 +94,7 @@ local function buildTiles(s)
 				if kind ~= 0 then
 					local t = tiles[k]
 					if not t then
-						t = part("Tile", CFrame.new(cellPos(x, y) + Vector3.new(0, -0.2, 0)), Vector3.new(CELL - 0.15, 0.4, CELL - 0.15), kind == 1 and th.room or th.corridor, kind == 1 and Enum.Material.Fabric or Enum.Material.Concrete)
+						t = part("Tile", CFrame.new(cellPos(x, y) + Vector3.new(0, -0.2, 0)), Vector3.new(CELL - 0.15, 0.4, CELL - 0.15), kind == 1 and th.room or th.corridor, kind == 1 and th.roomMat or th.corrMat)
 						tiles[k] = t
 						-- 周りの壁
 						for dy = -1, 1 do
@@ -107,10 +104,24 @@ local function buildTiles(s)
 								if nc ~= "9" and tonumber(nc) % 3 == 0 then
 									local wk = nx .. "," .. ny
 									if not walls[wk] then
-										local w = part("Wall", CFrame.new(cellPos(nx, ny) + Vector3.new(0, Config.WALL_H / 2 - 0.4, 0)), Vector3.new(CELL, Config.WALL_H, CELL), th.wall, Enum.Material.Concrete)
+										local w = part("Wall", CFrame.new(cellPos(nx, ny) + Vector3.new(0, Config.WALL_H / 2 - 0.4, 0)), Vector3.new(CELL, Config.WALL_H, CELL), th.wall, th.wallMat)
+										if th.wallMat == Enum.Material.Glass then
+											w.Transparency = 0.35
+										end
 										walls[wk] = w
-										local trim = part("Trim", CFrame.new(cellPos(nx, ny) + Vector3.new(0, Config.WALL_H - 0.3, 0)), Vector3.new(CELL + 0.05, 0.3, CELL + 0.05), th.trim)
-										trim.Parent = w
+										-- 上は壁より少し明るいふた、下は細い巾木（部屋側に 0.15 はみ出す）
+										local h, sat, val = th.wall:ToHSV()
+										local cap = part("Trim", CFrame.new(cellPos(nx, ny) + Vector3.new(0, Config.WALL_H - 0.35, 0)), Vector3.new(CELL + 0.02, 0.2, CELL + 0.02), Color3.fromHSV(h, sat * 0.8, math.min(1, val * 1.15 + 0.05)), th.wallMat)
+										cap.Parent = w
+										local base = part("WallBase", CFrame.new(cellPos(nx, ny) + Vector3.new(0, 0.1, 0)), Vector3.new(CELL + 0.3, 0.3, CELL + 0.3), th.trim)
+										base.Parent = w
+									end
+									-- 部屋の壁ぎわ: 小物と壁の明かり（4 方向の壁だけ）
+									if kind == 1 and (dx == 0 or dy == 0) and not props[k] then
+										props[k] = true
+										local wallDir = Vector3.new(dx, 0, dy)
+										Decor.prop(th, s.floor, x, y, cellPos(x, y), wallDir, t)
+										Decor.sconce(th, s.floor, x, y, cellPos(x, y), wallDir, t)
 									end
 								end
 							end
@@ -532,6 +543,10 @@ local function apply(s)
 		clearAll()
 		currentFloor = s.floor
 	end
+	if restoreLighting then
+		restoreLighting()
+	end
+	restoreLighting = Decor.applyLighting(theme(s.floor))
 	handleEvents(s)
 	buildTiles(s)
 	syncStairs(s)
@@ -552,6 +567,11 @@ RunService.RenderStepped:Connect(function(dt)
 		return
 	end
 	local a = math.min(1, dt * 14)
+	for _, c in CollectionService:GetTagged("FloatCoin") do
+		if c.Parent then
+			c.CFrame = c.CFrame * CFrame.Angles(0, dt * 1.5, 0) + Vector3.new(0, math.sin(os.clock() * 2 + c:GetAttribute("Float")) * dt * 0.6, 0)
+		end
+	end
 	if hero then
 		local cur = hero:GetPivot()
 		local goal = heroTarget * CFrame.new(0, 1.5, 0)
@@ -583,6 +603,10 @@ local function leaveRun()
 	inRun = false
 	camPos = nil
 	clearAll()
+	if restoreLighting then
+		restoreLighting()
+		restoreLighting = nil
+	end
 	cam.CameraType = Enum.CameraType.Custom
 	local ch = player.Character
 	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
