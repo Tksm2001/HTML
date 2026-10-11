@@ -127,6 +127,7 @@ end
 
 -- ===== 持ち物 =====
 local inv = Instance.new("Frame")
+inv.Name = "Inventory"
 inv.AnchorPoint = Vector2.new(0.5, 0.5)
 inv.Position = UDim2.fromScale(0.5, 0.5)
 inv.Size = UDim2.fromScale(0.92, 0.88)
@@ -225,6 +226,7 @@ end
 
 -- ===== 臨時売店 =====
 local shop = Instance.new("Frame")
+shop.Name = "Shop"
 shop.AnchorPoint = Vector2.new(0.5, 0.5)
 shop.Position = UDim2.fromScale(0.5, 0.5)
 shop.Size = UDim2.fromScale(0.92, 0.88)
@@ -283,6 +285,7 @@ end
 
 -- ===== 周の結果 =====
 local result = Instance.new("Frame")
+result.Name = "Result"
 result.AnchorPoint = Vector2.new(0.5, 0.5)
 result.Position = UDim2.fromScale(0.5, 0.5)
 result.Size = UDim2.fromScale(0.92, 0.88)

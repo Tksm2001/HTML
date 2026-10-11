@@ -151,6 +151,7 @@ end
 
 -- ===== 会話 =====
 local dlg = Instance.new("Frame")
+dlg.Name = "Dialog"
 dlg.AnchorPoint = Vector2.new(0.5, 1)
 dlg.Position = UDim2.new(0.5, 0, 1, -30)
 dlg.Size = UDim2.new(0.7, 0, 0, 150)

@@ -3,6 +3,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local ContextActionService = game:GetService("ContextActionService")
 local TweenService = game:GetService("TweenService")
 local CollectionService = game:GetService("CollectionService")
 
@@ -700,6 +702,7 @@ local KEYS = {
 }
 local held: { [number]: boolean } = {}
 local lastStep = 0
+local padFace = false -- L2 を押している間は向きだけ変える
 
 local function tryStep(dir)
 	if not inRun or not snap or snap.ended then
@@ -711,8 +714,12 @@ local function tryStep(dir)
 	if os.clock() - lastStep < 0.13 then
 		return
 	end
+	-- メニューを開いている間（コントローラーでボタンを選んでいる間）は歩かない
+	if GuiService.SelectedObject ~= nil then
+		return
+	end
 	lastStep = os.clock()
-	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or padFace then
 		send("face", dir)
 	else
 		send("step", dir)
@@ -741,7 +748,94 @@ UserInputService.InputEnded:Connect(function(input)
 		held[dir] = nil
 	end
 end)
+-- ===== コントローラー（PS / Xbox）=====
+-- 左スティック・十字キー: 歩く / L2 + 方向: 向きだけ / ×(A): のぼる / □(X): まつ / △(Y): 持ち物
+local DPAD = { [Enum.KeyCode.DPadUp] = 1, [Enum.KeyCode.DPadRight] = 2, [Enum.KeyCode.DPadDown] = 3, [Enum.KeyCode.DPadLeft] = 4 }
+local stickDir: number? = nil
+UserInputService.InputBegan:Connect(function(input)
+	if not inRun then
+		return
+	end
+	local dir = DPAD[input.KeyCode]
+	if dir then
+		held[dir] = true
+		tryStep(dir)
+	end
+end)
+UserInputService.InputEnded:Connect(function(input)
+	local dir = DPAD[input.KeyCode]
+	if dir then
+		held[dir] = nil
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.Thumbstick1 then
+		local v = input.Position
+		local d = nil
+		if v.Magnitude > 0.6 then
+			if math.abs(v.X) > math.abs(v.Y) then
+				d = v.X > 0 and 2 or 4
+			else
+				d = v.Y > 0 and 1 or 3
+			end
+		end
+		if stickDir and stickDir ~= d then
+			held[stickDir] = nil
+		end
+		stickDir = d
+		if d and inRun then
+			held[d] = true
+		end
+	elseif input.KeyCode == Enum.KeyCode.ButtonL2 then
+		padFace = input.Position.Z > 0.5
+	end
+end)
+
+local function gamepadAction(name, state, input)
+	if state ~= Enum.UserInputState.Begin then
+		return Enum.ContextActionResult.Sink
+	end
+	-- メニューを選んでいる時は、ボタンをメニューに渡す
+	if GuiService.SelectedObject ~= nil and name ~= "BankerMenu" then
+		return Enum.ContextActionResult.Pass
+	end
+	if name == "BankerClimb" then
+		if snap and snap.onStairs then
+			send("climb")
+		end
+	elseif name == "BankerWait" then
+		send("wait")
+	elseif name == "BankerMenu" then
+		local runUI = gui:FindFirstChild("RunUI")
+		local test = runUI and runUI:FindFirstChild("Test")
+		local inv = runUI and runUI:FindFirstChild("Inventory")
+		if test and inv then
+			test:Fire(inv.Visible and "close" or "inv")
+		end
+	end
+	return Enum.ContextActionResult.Sink
+end
+local padBound = false
+local function bindPad(on: boolean)
+	if on == padBound then
+		return
+	end
+	padBound = on
+	if on then
+		ContextActionService:BindActionAtPriority("BankerClimb", gamepadAction, false, 3000, Enum.KeyCode.ButtonA)
+		ContextActionService:BindActionAtPriority("BankerWait", gamepadAction, false, 3000, Enum.KeyCode.ButtonX)
+		ContextActionService:BindActionAtPriority("BankerMenu", gamepadAction, false, 3000, Enum.KeyCode.ButtonY)
+	else
+		ContextActionService:UnbindAction("BankerClimb")
+		ContextActionService:UnbindAction("BankerWait")
+		ContextActionService:UnbindAction("BankerMenu")
+		held = {}
+		stickDir = nil
+	end
+end
+
 RunService.Heartbeat:Connect(function()
+	bindPad(inRun)
 	if not inRun then
 		return
 	end
