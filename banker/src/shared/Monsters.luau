@@ -7,7 +7,7 @@ Monsters.LIST = {
 	{ id = "fee", name = "手数料コウモリ", nameEn = "Fee Bat", hp = 8, atk = 2, def = 1, exp = 6, floors = { 2, 12 }, weight = 7, special = "steal", desc = "円を盗んで逃げる。倒すと返してくれる" },
 	{ id = "inflation", name = "インフレねずみ", nameEn = "Inflation Mouse", hp = 7, atk = 3, def = 0, exp = 4, floors = { 3, 14 }, weight = 6, special = "split", desc = "ほうっておくと増える" },
 	{ id = "risk", name = "リスクのカゲ", nameEn = "Risk Shade", hp = 12, atk = 5, def = 1, exp = 10, floors = { 4, 16 }, weight = 6, special = "invisible", desc = "近づくまで見えない" },
-	{ id = "gator", name = "不良債権ワニ", nameEn = "Bad Debt Gator", hp = 22, atk = 7, def = 3, exp = 18, floors = { 6, 20 }, weight = 5, special = "rust", desc = "かみつくとスーツの強化値が下がる" },
+	{ id = "gator", name = "不良債権ワニ", nameEn = "Bad Debt Gator", hp = 22, atk = 7, def = 3, exp = 18, floors = { 6, 20 }, weight = 5, special = "bite", desc = "かむ力が強い。ときどき大きなダメージ" },
 	{ id = "fx", name = "為替カメレオン", nameEn = "FX Chameleon", hp = 16, atk = 5, def = 2, exp = 14, floors = { 7, 22 }, weight = 5, special = "shift", desc = "色が変わるたびに攻撃と防御が入れ替わる" },
 	{ id = "interest", name = "利息ヘビ", nameEn = "Interest Snake", hp = 20, atk = 6, def = 2, exp = 16, floors = { 9, 26 }, weight = 5, special = "stress", desc = "かまれるとストレス（毎ターン HP −1）" },
 	{ id = "sleepy", name = "会議のねむけ", nameEn = "Meeting Drowse", hp = 14, atk = 3, def = 2, exp = 12, floors = { 5, 20 }, weight = 5, special = "sleep", desc = "さわると居眠りしてしまう" },

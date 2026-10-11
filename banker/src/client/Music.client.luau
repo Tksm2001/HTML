@@ -16,6 +16,7 @@ local TRACKS = {
 	exec = { id = "rbxassetid://88875132839728", volume = 0.3 }, -- bgm_exec（20〜24F）
 	dark = { id = "rbxassetid://139704837121609", volume = 0.32 }, -- bgm_dark（25〜29F）
 	boss = { id = "rbxassetid://131102793368653", volume = 0.4 }, -- bgm_boss（30F 取締役会）
+	mhouse = { id = "rbxassetid://87079582228837", volume = 0.4 }, -- bgm_mhouse（監査室＝モンスターハウスの間）
 }
 
 -- 章の始まりの階 → 曲
@@ -68,7 +69,11 @@ end
 
 event.OnClientEvent:Connect(function(kind, data)
 	if kind == "run" then
-		play(trackForFloor(data.floor))
+		if data.mhouse then
+			play("mhouse")
+		else
+			play(trackForFloor(data.floor))
+		end
 	elseif kind == "runEnd" then
 		play("office")
 	end

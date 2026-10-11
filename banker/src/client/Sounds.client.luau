@@ -10,11 +10,12 @@ local IDS = {
 	miss = 9120222115, -- キュッ（かわした・罠）
 	pick = 9126073001, -- チーン（拾う・階段）
 	hit = 9126267420, -- ドン（攻撃）
+	levelup = "rbxassetid://137914459462553", -- 自作（publish/se/make_levelup.py）
 }
 local sfx = {}
 for k, id in IDS do
 	local s = Instance.new("Sound")
-	s.SoundId = "rbxassetid://" .. id
+	s.SoundId = (type(id) == "string" and id:sub(1, 3) == "rbx") and id or ("rbxassetid://" .. tostring(id))
 	s.Volume = 0.6
 	s.Parent = SoundService
 	sfx[k] = s
@@ -40,8 +41,12 @@ event.OnClientEvent:Connect(function(kind, data)
 				play("miss")
 			elseif e.t == "pickup" or e.t == "floor" then
 				play("pick")
-			elseif e.t == "levelup" or e.t == "card" or e.t == "beam" then
+			elseif e.t == "levelup" then
+				play("levelup", 0.8)
+			elseif e.t == "card" or e.t == "beam" then
 				play("sparkle")
+			elseif e.t == "mhouse" and e.on then
+				play("miss", 0.9)
 			elseif e.t == "exam_clear" then
 				play("fanfare", 0.8)
 			elseif e.t == "end" and e.result ~= "dead" then

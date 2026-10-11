@@ -587,6 +587,12 @@ local function handleEvents(s)
 			clearAll()
 			currentFloor = e.floor
 			showFloorTitle(e.floor, e.chapter)
+		elseif e.t == "mhouse" then
+			if e.on then
+				floatText(cellPos(s.px, s.py), "！！ 監査室 ！！", Color3.fromRGB(255, 90, 90), true)
+			else
+				floatText(cellPos(s.px, s.py), "監査クリア！", Color3.fromRGB(120, 255, 160), true)
+			end
 		elseif e.t == "exam_clear" then
 			floatText(cellPos(s.px, s.py), "昇進試験 合格！", Color3.fromRGB(255, 230, 120), true)
 		end
@@ -703,6 +709,7 @@ local KEYS = {
 local held: { [number]: boolean } = {}
 local lastStep = 0
 local padFace = false -- L2 を押している間は向きだけ変える
+local panelOpen: (() -> boolean)? = nil
 
 local function tryStep(dir)
 	if not inRun or not snap or snap.ended then
@@ -714,8 +721,8 @@ local function tryStep(dir)
 	if os.clock() - lastStep < 0.13 then
 		return
 	end
-	-- メニューを開いている間（コントローラーでボタンを選んでいる間）は歩かない
-	if GuiService.SelectedObject ~= nil then
+	-- メニューを開いている間は歩かない
+	if panelOpen and panelOpen() then
 		return
 	end
 	lastStep = os.clock()
@@ -749,17 +756,65 @@ UserInputService.InputEnded:Connect(function(input)
 	end
 end)
 -- ===== コントローラー（PS / Xbox）=====
--- 左スティック・十字キー: 歩く / L2 + 方向: 向きだけ / ×(A): のぼる / □(X): まつ / △(Y): 持ち物
+-- 左スティック・十字キー: 歩く / L2 + 方向: 向きだけ / ×(A): のぼる / □(X): まつ / △(Y): 持ち物 / R1: 売店
 local DPAD = { [Enum.KeyCode.DPadUp] = 1, [Enum.KeyCode.DPadRight] = 2, [Enum.KeyCode.DPadDown] = 3, [Enum.KeyCode.DPadLeft] = 4 }
 local stickDir: number? = nil
+local function runUI(name: string): GuiObject?
+	local sg = gui:FindFirstChild("RunUI")
+	return sg and sg:FindFirstChild(name)
+end
+-- 持ち物・売店・結果・会話のどれかが開いているか（開いている間はボタンをメニューに使う）
+panelOpen = function(): boolean
+	for _, n in { "Inventory", "Shop", "Result" } do
+		local f = runUI(n)
+		if f and f.Visible then
+			return true
+		end
+	end
+	local o = gui:FindFirstChild("OfficeUI")
+	local d = o and o:FindFirstChild("Dialog")
+	return d ~= nil and d.Visible
+end
+local function runTest(cmd: string)
+	local sg = gui:FindFirstChild("RunUI")
+	local t = sg and sg:FindFirstChild("Test")
+	if t then
+		t:Fire(cmd)
+	end
+end
 UserInputService.InputBegan:Connect(function(input)
 	if not inRun then
 		return
 	end
-	local dir = DPAD[input.KeyCode]
+	local k = input.KeyCode
+	local dir = DPAD[k]
 	if dir then
 		held[dir] = true
 		tryStep(dir)
+		return
+	end
+	if k == Enum.KeyCode.ButtonY then
+		local inv = runUI("Inventory")
+		if inv and inv.Visible then
+			runTest("close")
+		elseif not panelOpen() then
+			runTest("inv")
+		end
+		return
+	end
+	if panelOpen() then
+		return
+	end
+	if k == Enum.KeyCode.ButtonX then
+		send("wait")
+	elseif k == Enum.KeyCode.ButtonA then
+		if snap and snap.onStairs then
+			send("climb")
+		end
+	elseif k == Enum.KeyCode.ButtonR1 then
+		if snap and snap.shop and snap.shop.near then
+			runTest("shop")
+		end
 	end
 end)
 UserInputService.InputEnded:Connect(function(input)
@@ -791,30 +846,7 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
-local function gamepadAction(name, state, input)
-	if state ~= Enum.UserInputState.Begin then
-		return Enum.ContextActionResult.Sink
-	end
-	-- メニューを選んでいる時は、ボタンをメニューに渡す
-	if GuiService.SelectedObject ~= nil and name ~= "BankerMenu" then
-		return Enum.ContextActionResult.Pass
-	end
-	if name == "BankerClimb" then
-		if snap and snap.onStairs then
-			send("climb")
-		end
-	elseif name == "BankerWait" then
-		send("wait")
-	elseif name == "BankerMenu" then
-		local runUI = gui:FindFirstChild("RunUI")
-		local test = runUI and runUI:FindFirstChild("Test")
-		local inv = runUI and runUI:FindFirstChild("Inventory")
-		if test and inv then
-			test:Fire(inv.Visible and "close" or "inv")
-		end
-	end
-	return Enum.ContextActionResult.Sink
-end
+-- 塔の中ではジャンプ（×）を止める（キャラは止めてあるが念のため）
 local padBound = false
 local function bindPad(on: boolean)
 	if on == padBound then
@@ -822,13 +854,11 @@ local function bindPad(on: boolean)
 	end
 	padBound = on
 	if on then
-		ContextActionService:BindActionAtPriority("BankerClimb", gamepadAction, false, 3000, Enum.KeyCode.ButtonA)
-		ContextActionService:BindActionAtPriority("BankerWait", gamepadAction, false, 3000, Enum.KeyCode.ButtonX)
-		ContextActionService:BindActionAtPriority("BankerMenu", gamepadAction, false, 3000, Enum.KeyCode.ButtonY)
+		ContextActionService:BindActionAtPriority("BankerNoJump", function()
+			return Enum.ContextActionResult.Pass
+		end, false, 3000, Enum.KeyCode.ButtonA)
 	else
-		ContextActionService:UnbindAction("BankerClimb")
-		ContextActionService:UnbindAction("BankerWait")
-		ContextActionService:UnbindAction("BankerMenu")
+		ContextActionService:UnbindAction("BankerNoJump")
 		held = {}
 		stickDir = nil
 	end

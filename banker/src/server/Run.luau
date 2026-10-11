@@ -94,6 +94,7 @@ end
 function Run:enterFloor(n: number)
 	self.floor = n
 	self.f = MapGen.generate(self.seed, n)
+	self.mhouse = nil
 	self.px, self.py = self.f.start.X, self.f.start.Y
 	self.explored = {}
 	self.monsters = {}
@@ -349,6 +350,7 @@ function Run:step(dir: number): boolean
 	self.px, self.py = nx, ny
 	self:ev({ t = "move", who = "player", x = nx, y = ny })
 	self:updateSight()
+	self:checkMonsterHouse()
 	-- 拾う
 	local it, idx = self:itemAt(nx, ny)
 	if it then
@@ -372,6 +374,45 @@ function Run:step(dir: number): boolean
 	end
 	self:endTurn()
 	return true
+end
+
+-- 監査室（モンスターハウス）に足を踏み入れたら、中の敵が一斉に起きる
+function Run:checkMonsterHouse()
+	if self.mhouse then
+		return
+	end
+	local room = MapGen.roomAt(self.f, self.px, self.py)
+	if not room or room.kind ~= "audit" or room.triggered then
+		return
+	end
+	room.triggered = true
+	local uids = {}
+	for _, m in self.monsters do
+		if MapGen.roomAt(self.f, m.x, m.y) == room then
+			m.asleep = false
+			m.sleepTurns = 0
+			m.alert = true
+			uids[m.uid] = true
+		end
+	end
+	self.mhouse = uids
+	self:say("！！ 監査室だ！ 監査官たちが一斉に動き出した！")
+	self:ev({ t = "mhouse", on = true })
+end
+
+-- 監査室の敵を全部倒したら終わり
+function Run:updateMonsterHouse()
+	if not self.mhouse then
+		return
+	end
+	for _, m in self.monsters do
+		if self.mhouse[m.uid] then
+			return
+		end
+	end
+	self.mhouse = nil
+	self:say("監査を乗り切った！")
+	self:ev({ t = "mhouse", on = false })
 end
 
 function Run:pickup(it, idx)
@@ -902,6 +943,7 @@ end
 -- ===== ターンの終わり（敵が動く）=====
 function Run:endTurn()
 	self.turn += 1
+	self:updateMonsterHouse()
 	-- やる気
 	if not self:hasAcc("noHunger") then
 		self.hunger = math.max(0, self.hunger - Config.HUNGER_PER_TURN)
@@ -954,6 +996,7 @@ function Run:endTurn()
 		end
 	end
 	-- 湧き
+	self:checkMonsterHouse()
 	self.spawnTimer += 1
 	if self.spawnTimer >= Config.SPAWN_EVERY and #self.monsters < 12 and not self.f.special then
 		self.spawnTimer = 0
@@ -1090,14 +1133,17 @@ function Run:monsterAttack(m)
 		self:say(m.def.name .. " に " .. n .. " 円 盗まれた！ 倒せば返ってくる")
 		return
 	end
+	local bigBite = sp == "bite" and self.rng:NextNumber() < 0.25
+	if bigBite then
+		dmg = math.floor(dmg * 1.6) + 1
+	end
 	self:damagePlayer(dmg, m.def.name)
 	if self.ended then
 		return
 	end
 	local msg = m.def.name .. " の攻撃！ " .. dmg .. " ダメージ"
-	if sp == "rust" and self.equip.armor and self.rng:NextNumber() < 0.4 then
-		self.equip.armor.plus = (self.equip.armor.plus or 0) - 1
-		msg ..= "（スーツがかじられて −1）"
+	if bigBite then
+		msg ..= "（がぶっ！ 大きくかまれた）"
 	elseif sp == "stress" and self.rng:NextNumber() < 0.5 then
 		self.status.stress = 10
 		msg ..= "（ストレス！ しばらく毎ターン HP −1）"
@@ -1225,6 +1271,7 @@ function Run:snapshot(full: boolean?)
 		events = self.events,
 		turn = self.turn,
 		ended = self.ended,
+		mhouse = self.mhouse ~= nil,
 		kills = self.kills,
 		floorCap = self.floorCap,
 		onStairs = (self.f.stairs.X == self.px and self.f.stairs.Y == self.py),

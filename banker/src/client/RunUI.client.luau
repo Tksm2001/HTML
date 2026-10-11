@@ -88,13 +88,101 @@ btns.Position = UDim2.new(1, -12, 0, 60)
 btns.Size = UDim2.fromOffset(150, 230)
 btns.BackgroundTransparency = 1
 btns.Parent = screen
-local invBtn = button(btns, UDim2.fromOffset(150, 44), UDim2.fromOffset(0, 0), "持ち物  [I]", Color3.fromRGB(70, 110, 170))
-local climbBtn = button(btns, UDim2.fromOffset(150, 44), UDim2.fromOffset(0, 50), "▲ のぼる  [E]", Color3.fromRGB(200, 150, 40))
+local invBtn = button(btns, UDim2.fromOffset(150, 44), UDim2.fromOffset(0, 0), "持ち物  [I] △", Color3.fromRGB(70, 110, 170))
+local climbBtn = button(btns, UDim2.fromOffset(150, 44), UDim2.fromOffset(0, 50), "▲ のぼる [E] ×", Color3.fromRGB(200, 150, 40))
 climbBtn.Visible = false
-local waitBtn = button(btns, UDim2.fromOffset(150, 44), UDim2.fromOffset(0, 100), "まつ  [Q]", Color3.fromRGB(80, 90, 110))
-local shopBtn = button(btns, UDim2.fromOffset(150, 44), UDim2.fromOffset(0, 150), "売店", Color3.fromRGB(230, 120, 60))
+local waitBtn = button(btns, UDim2.fromOffset(150, 44), UDim2.fromOffset(0, 100), "まつ  [Q] □", Color3.fromRGB(80, 90, 110))
+local shopBtn = button(btns, UDim2.fromOffset(150, 44), UDim2.fromOffset(0, 150), "売店  R1", Color3.fromRGB(230, 120, 60))
 shopBtn.Visible = false
 local giveBtn = button(btns, UDim2.fromOffset(150, 30), UDim2.fromOffset(0, 200), "あきらめる", Color3.fromRGB(90, 50, 50))
+
+-- ===== 右上: 半透明のミニマップ（行ったところだけ）=====
+-- 1 マスのピクセル（スマホなど小さい画面では 3）
+local MM = (workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize.Y < 520) and 3 or 5
+local mm = Instance.new("Frame")
+mm.Name = "Minimap"
+mm.AnchorPoint = Vector2.new(0.5, 0)
+mm.Position = UDim2.new(0.5, 0, 0, 8)
+mm.Size = UDim2.fromOffset(Config.MAP_W * MM + 8, Config.MAP_H * MM + 8)
+mm.BackgroundColor3 = Color3.fromRGB(10, 12, 20)
+mm.BackgroundTransparency = 0.55
+mm.BorderSizePixel = 0
+mm.Parent = screen
+corner(mm, 8)
+local mmCells = Instance.new("Frame")
+mmCells.Position = UDim2.fromOffset(4, 4)
+mmCells.Size = UDim2.fromOffset(Config.MAP_W * MM, Config.MAP_H * MM)
+mmCells.BackgroundTransparency = 1
+mmCells.Parent = mm
+local mmDots = Instance.new("Frame")
+mmDots.Position = UDim2.fromOffset(4, 4)
+mmDots.Size = mmCells.Size
+mmDots.BackgroundTransparency = 1
+mmDots.ZIndex = 3
+mmDots.Parent = mm
+local cellFrames: { [string]: Frame } = {}
+local mmFloor = -1
+local function mmCell(x, y, color, transp, size, z)
+	local f = Instance.new("Frame")
+	f.BorderSizePixel = 0
+	f.BackgroundColor3 = color
+	f.BackgroundTransparency = transp
+	local sz = size or MM
+	f.Size = UDim2.fromOffset(sz, sz)
+	f.Position = UDim2.fromOffset((x - 1) * MM + (MM - sz) / 2, (y - 1) * MM + (MM - sz) / 2)
+	f.ZIndex = z or 2
+	return f
+end
+local function drawMinimap(s)
+	if s.floor ~= mmFloor then
+		mmFloor = s.floor
+		mmCells:ClearAllChildren()
+		cellFrames = {}
+	end
+	for y = 1, Config.MAP_H do
+		local row = s.rows[y]
+		for x = 1, Config.MAP_W do
+			local c = string.sub(row, x, x)
+			if c ~= "9" then
+				local n = tonumber(c)
+				local kind = n % 3
+				if kind ~= 0 then
+					local k = x .. "," .. y
+					local f = cellFrames[k]
+					if not f then
+						f = mmCell(x, y, kind == 1 and Color3.fromRGB(150, 175, 220) or Color3.fromRGB(120, 125, 140), 0.3)
+						f.Parent = mmCells
+						cellFrames[k] = f
+					end
+					f.BackgroundTransparency = n >= 3 and 0.15 or 0.45
+				end
+			end
+		end
+	end
+	mmDots:ClearAllChildren()
+	for _, it in s.items do
+		mmCell(it.x, it.y, it.kind == "yen" and Color3.fromRGB(255, 210, 80) or Color3.fromRGB(110, 230, 255), 0, 3).Parent = mmDots
+	end
+	if s.stairs then
+		mmCell(s.stairs[1], s.stairs[2], Color3.fromRGB(255, 240, 120), 0, 5).Parent = mmDots
+	end
+	if s.shop then
+		mmCell(s.shop.x, s.shop.y, Color3.fromRGB(255, 150, 60), 0, 5).Parent = mmDots
+	end
+	for _, m in s.monsters do
+		mmCell(m.x, m.y, Color3.fromRGB(255, 80, 90), 0, 4).Parent = mmDots
+	end
+	if s.intern then
+		mmCell(s.intern.x, s.intern.y, Color3.fromRGB(120, 230, 140), 0, 4).Parent = mmDots
+	end
+	local me = mmCell(s.px, s.py, Color3.fromRGB(255, 255, 255), 0, 5)
+	me.ZIndex = 4
+	local st = Instance.new("UIStroke")
+	st.Color = Color3.fromRGB(40, 120, 255)
+	st.Thickness = 1.5
+	st.Parent = me
+	me.Parent = mmDots
+end
 
 -- ===== 下: ログ =====
 local logF = Instance.new("Frame")
@@ -316,6 +404,8 @@ local function apply(s)
 	stat.Visible = true
 	btns.Visible = true
 	logF.Visible = true
+	mm.Visible = true
+	drawMinimap(s)
 	if s.turn == 0 and #logBuf > 0 and s.events[1] and s.events[1].t == "floor" then
 		logBuf = {}
 	end
@@ -471,6 +561,7 @@ event.OnClientEvent:Connect(function(kind, data)
 			stat.Visible = false
 			btns.Visible = false
 			logF.Visible = false
+			mm.Visible = false
 		end)
 	end
 end)

@@ -84,8 +84,6 @@ function Items.make(rng: Random, def, floor: number)
 		local r = rng:NextNumber()
 		if r < 0.25 then
 			inst.plus = rng:NextInteger(1, 3)
-		elseif r < 0.32 then
-			inst.plus = -1
 		end
 	elseif def.kind == "calc" then
 		inst.charges = math.max(1, def.charges - rng:NextInteger(0, 2))
