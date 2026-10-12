@@ -61,7 +61,7 @@ end
 Config.HUNGER_MAX = 100 -- やる気
 Config.HUNGER_PER_TURN = 0.12 -- 1 歩で減る量（約 800 歩で 0）
 Config.HP_REGEN_TURNS = 8 -- 何ターンに 1 回 HP が 1 回復するか（やる気がある時）
-Config.INVENTORY_MAX = 16
+Config.INVENTORY_MAX = 20
 Config.SIGHT = 6 -- 通路で見える距離（マス）
 
 -- ===== 円 =====

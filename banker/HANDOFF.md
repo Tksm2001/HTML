@@ -121,3 +121,4 @@
 - **2026-10-11: 公開した**（オーディエンス「公開」。最初は 16 歳以上と信頼できる友達のみ）。待機期間が明けていた。表示「本日、あと 4 のバーチャル空間を公開できます」。残り 3 本は 1 日 1 本ずつの予定（だるま → ようかい → おにぎり）
 - 2026-10-11: **コントローラー対応**（PS5 で塔に入ると操作できないと報告）。Dungeon.client: 左スティック/十字キーで歩く、L2+方向で向きだけ、×(A) のぼる、□(X) まつ、△(Y) 持ち物（ContextActionService、塔の中だけ）。`Gamepad.client.luau`: メニューが開いたら最初のボタンを GuiService.SelectedObject に、○(B) で閉じる。公開版 v11。実機のコントローラーでは未検証（Studio では割り当てとキーボード操作のみ確認）
 - 2026-10-11（公開版 v14）: 利用者の PS5 フィードバック対応。□ まつ・R1 塔内売店（ゲームパッドは UserInputService.InputBegan で処理し、パネル表示中は無視）／モンスターハウス（監査室に入ると全員起床＋「！！監査室！！」＋専用 BGM `bgm_mhouse`、全滅で解除。`Run:checkMonsterHouse / updateMonsterHouse`、snapshot.mhouse）／防具マイナス廃止（Items.make の −1、ワニの rust → bite: 25% で 1.6 倍）／ミニマップ（RunUI 上部中央、半透明、行った所だけ、スマホは 3px/マス）／レベルアップ効果音を numpy で合成（`publish/se/make_levelup.py` → se_levelup.mp3）
+- 2026-10-12（公開版 v15）: 持ち物の上限 16 → 20（`Config.INVENTORY_MAX`）。利用者の希望
