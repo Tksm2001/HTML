@@ -108,14 +108,18 @@ local function startRun(player: Player, daily: boolean)
 	local rank = Profile.rank(player)
 	local seed = daily and (os.time() // 86400) or Random.new():NextInteger(1, 1e9)
 	local bag = deepCopy(d.bag or {})
-	local run = Run.new(player, { seed = seed, floorCap = daily and Config.DAILY_FLOORS or Config.RANKS[rank].floorCap, bag = bag, yen = 0, daily = daily })
+	local run = Run.new(player, { seed = seed, floorCap = daily and Config.DAILY_FLOORS or Config.RANKS[rank].floorCap, bag = bag, yen = 0, daily = daily, training = (d.runs == 0 and not daily) })
 	run.rank = rank
+	run.protect = d.runs < Config.PROTECT_RUNS
 	runs[player] = run
 	player:SetAttribute("InRun", true)
 	hideCharacter(player)
 	if d.runs == 0 then
-		run:say("先輩ミサキ「矢印キーか画面の十字で 1 歩ずつ。敵にぶつかれば攻撃だよ」")
-		run:say("先輩ミサキ「▲ の階段を見つけたら『のぼる』。危なくなったら 持ち物の 帰還の名刺！」")
+		run:say("先輩ミサキ「今日は研修！ 1 歩動くと敵も 1 歩。あわてなくていいよ」")
+		run:say("先輩ミサキ「光っている ▲ が階段。上のミニマップの黄色い点だよ。行ってみよう！」")
+	end
+	if run.protect then
+		run:say("◆ 新人ボーナス: あと " .. (Config.PROTECT_RUNS - d.runs) .. " 回は、倒れても持ち物が残る")
 	end
 	event:FireClient(player, "run", run:snapshot(true))
 end
@@ -127,12 +131,17 @@ local function finishRun(player: Player)
 	end
 	runs[player] = nil
 	local d = Profile.get(player)
-	local result = { floor = run.floor, result = run.ended, kills = run.kills, yen = run.yen, daily = run.daily }
-	local newRank = Profile.finishRun(player, result)
-	-- 持ち物
-	if run.ended == "dead" then
+	local result = { floor = run.floor, result = run.ended, kills = run.kills, yen = run.picked_yen or run.yen, daily = run.daily, picked = run.picked or 0 }
+	local newRank, missionDone = Profile.finishRun(player, result)
+	-- 持ち物（新人ボーナス中は倒れても残る）
+	local kept = false
+	if run.ended == "dead" and not run.protect then
 		d.bag = {}
 	else
+		kept = run.ended == "dead"
+		for _, it in run.inv do
+			it.equipped = it.equipped
+		end
 		d.bag = run.inv
 	end
 	-- ランキング
@@ -159,7 +168,13 @@ local function finishRun(player: Player)
 	else
 		story = { { who = "kanemoto", text = Story.RETURN[Random.new():NextInteger(1, #Story.RETURN)] } }
 	end
-	event:FireClient(player, "runEnd", { result = run.ended, floor = run.floor, kills = run.kills, yen = run.yen, pts = d.history[1] and d.history[1].pts or 0, daily = run.daily, story = story, newRank = newRank })
+	event:FireClient(player, "runEnd", { result = run.ended, floor = run.floor, kills = run.kills, yen = run.yen, pts = d.history[1] and d.history[1].pts or 0, daily = run.daily, story = story, newRank = newRank, kept = kept })
+	if missionDone then
+		local m = Profile.mission(d)
+		task.delay(1.5, function()
+			event:FireClient(player, "toast", "★ 今日のお題 達成！ +" .. m.reward .. " 円")
+		end)
+	end
 	sendProfile(player)
 	if newRank then
 		-- ランクアップのセリフ（伝説の万年筆のプレゼントも）
@@ -195,6 +210,10 @@ request.OnServerEvent:Connect(function(player: Player, kind: string, a, b)
 		end
 		if kind == "step" and type(a) == "number" and a >= 1 and a <= 4 then
 			if run:step(math.floor(a)) then
+				afterAction(player, run)
+			end
+		elseif kind == "dash" and type(a) == "number" and a >= 1 and a <= 4 then
+			if run:dash(math.floor(a)) then
 				afterAction(player, run)
 			end
 		elseif kind == "wait" then
@@ -423,6 +442,12 @@ Players.PlayerAdded:Connect(function(player)
 	task.wait(0.5)
 	sendProfile(player)
 	refreshRanking()
+	local d = Profile.get(player)
+	if d and (d.loginBonus or 0) > 0 then
+		task.delay(3, function()
+			event:FireClient(player, "toast", "ログインボーナス +" .. d.loginBonus .. " 円（" .. d.streak .. " 日連続）")
+		end)
+	end
 end)
 
 Players.PlayerRemoving:Connect(function(player)

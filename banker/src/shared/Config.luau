@@ -79,6 +79,20 @@ Config.MONSTERS_PER_FLOOR = { 4, 7 }
 Config.SPAWN_EVERY = 40 -- 何ターンごとに敵が湧くか
 Config.TURN_DELAY = 0.12 -- 1 ターンの演出時間（秒）
 
+-- ===== 毎日来る理由 =====
+Config.LOGIN_BONUS = 200 -- 1 日目
+Config.LOGIN_BONUS_STEP = 100 -- 連続 1 日ごとに +100（最大 5 日分）
+-- 今日のお題（日替わり）。goal を超えたら報酬
+Config.MISSIONS = {
+	{ id = "kills", text = "塔で敵を %d 体たおす", goal = 10, reward = 500 },
+	{ id = "floor", text = "塔で %dF まで行く", goal = 4, reward = 500 },
+	{ id = "yen", text = "塔で円を %d 拾う", goal = 600, reward = 500 },
+	{ id = "runs", text = "塔に %d 回 挑戦する", goal = 2, reward = 400 },
+	{ id = "items", text = "道具を %d 個 拾う", goal = 8, reward = 500 },
+}
+-- 新人研修: 最初の何周まで、倒れても持ち物が残るか
+Config.PROTECT_RUNS = 2
+
 -- ===== 毎日の案件 =====
 Config.DAILY_FLOORS = 10
 

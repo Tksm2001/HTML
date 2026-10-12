@@ -134,6 +134,18 @@ local yenT = label(career, UDim2.fromOffset(280, 18), UDim2.fromOffset(10, 76), 
 yenT.TextScaled = false
 yenT.TextSize = 14
 local bagBtn = button(screen, UDim2.fromOffset(150, 40), UDim2.fromOffset(12, 116), "持ち物・装備", Color3.fromRGB(70, 110, 170))
+-- 今日のお題（左上のキャリアの下）
+local missionF = Instance.new("Frame")
+missionF.Position = UDim2.fromOffset(170, 116)
+missionF.Size = UDim2.fromOffset(300, 40)
+missionF.BackgroundColor3 = Color3.fromRGB(60, 45, 25)
+missionF.BackgroundTransparency = 0.15
+missionF.Parent = screen
+corner(missionF, 10)
+local missionT = label(missionF, UDim2.new(1, -16, 1, -8), UDim2.fromOffset(8, 4), "", Color3.fromRGB(255, 225, 150), nil, Enum.Font.Gotham)
+missionT.TextScaled = false
+missionT.TextSize = 14
+missionT.TextWrapped = true
 
 local function refreshCareer()
 	if not profile then
@@ -146,7 +158,17 @@ local function refreshCareer()
 	local frac = nxt > base and math.clamp((profile.points - base) / (nxt - base), 0, 1) or 1
 	ptsFg.Size = UDim2.fromScale(frac, 1)
 	ptsT.Text = r < #Config.RANKS and string.format("キャリア %d / 次の昇進 %d 点   行ける階 %dF", profile.points, nxt, profile.floorCap) or string.format("キャリア %d 点   伝説（エンドレス塔）", profile.points)
-	yenT.Text = string.format("%d 円   挑戦 %d 回   最高 %dF", profile.yen, profile.runs, profile.bestFloor)
+	yenT.Text = string.format("%d 円   挑戦 %d 回   最高 %dF   %d 日連続", profile.yen, profile.runs, profile.bestFloor, profile.streak or 1)
+	local m = profile.mission
+	if m then
+		missionT.Text = (m.done and "✔ 今日のお題 達成！ " or "★ 今日のお題: ") .. m.text .. (m.done and "" or string.format("（%d / %d）  報酬 %d 円", m.prog, m.goal, m.reward))
+	end
+	if (profile.protectLeft or 0) > 0 then
+		missionT.Text ..= "\n新人ボーナス: あと " .. profile.protectLeft .. " 回は倒れても持ち物が残る"
+		missionF.Size = UDim2.fromOffset(300, 56)
+	else
+		missionF.Size = UDim2.fromOffset(300, 40)
+	end
 end
 
 -- ===== 会話 =====
@@ -462,6 +484,7 @@ event.OnClientEvent:Connect(function(kind, data)
 	elseif kind == "run" then
 		career.Visible = false
 		bagBtn.Visible = false
+		missionF.Visible = false
 		shopF.Visible = false
 		bagF.Visible = false
 		lockF.Visible = false
@@ -470,6 +493,7 @@ event.OnClientEvent:Connect(function(kind, data)
 		task.delay(0.5, function()
 			career.Visible = true
 			bagBtn.Visible = true
+			missionF.Visible = true
 		end)
 	end
 end)

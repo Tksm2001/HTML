@@ -542,7 +542,7 @@ event.OnClientEvent:Connect(function(kind, data)
 		resTitle.Text = title
 		local lines = {
 			"到達: " .. data.floor .. "F    倒した敵: " .. data.kills,
-			r == "dead" and "持ち物と " .. data.yen .. " 円は失った…（ランクは残る）" or "持ち帰った: " .. data.yen .. " 円 と 持ち物ぜんぶ",
+			r == "dead" and (data.kept and ("新人ボーナス: 持ち物は残った！（" .. data.yen .. " 円は失った）") or ("持ち物と " .. data.yen .. " 円は失った…（ランクは残る）")) or "持ち帰った: " .. data.yen .. " 円 と 持ち物ぜんぶ",
 			"キャリア点 +" .. (data.pts or 0),
 			"",
 		}

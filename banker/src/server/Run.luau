@@ -46,6 +46,10 @@ function Run.new(player: Player, opts)
 	self.log = {}
 	self.events = {}
 	self.kills = 0
+	self.picked = 0 -- 拾った道具の数（今日のお題）
+	self.picked_yen = 0 -- 拾った円
+	self.training = opts.training == true -- 初めての 1 周（研修）
+	self.hints = {}
 	self.facing = 3 -- 下向き
 	self.ended = nil -- "dead" / "returned" / "cleared" / "cap"
 	self.monsters = {}
@@ -118,7 +122,13 @@ function Run:enterFloor(n: number)
 	if self.intern then
 		self.intern.x, self.intern.y = self:freeNear(self.px, self.py)
 	end
+	if self.training and n <= 2 and not self.f.special then
+		self:setupTraining()
+	end
 	self:updateSight()
+	if self.training and n <= 2 then
+		self.explored[self.f.stairs.X .. "," .. self.f.stairs.Y] = true
+	end
 	local chapter = Config.chapterFor(n)
 	self:ev({ t = "floor", floor = n, chapter = chapter.name })
 	if chapter.from == n and n > 1 then
@@ -367,13 +377,135 @@ function Run:step(dir: number): boolean
 		return true
 	end
 	if self.f.stairs.X == nx and self.f.stairs.Y == ny then
-		self:say("上への階段だ。「のぼる」で次の階へ")
+		self:say("上への階段だ。「のぼる」（× / E / ボタン）で次の階へ")
+	end
+	if self.training then
+		for _, mm in self.monsters do
+			if self:canSeeMonster(mm) then
+				self:hint("enemy", "先輩ミサキ「敵だ！ 敵のいる方に進むと攻撃。HP が減ったらコーヒーを飲もう」")
+				break
+			end
+		end
 	end
 	if self.shop and math.abs(self.shop.x - nx) <= 1 and math.abs(self.shop.y - ny) <= 1 then
 		self:say("先輩ミサキ「いらっしゃい。塔の中で店番してるの」")
 	end
 	self:endTurn()
 	return true
+end
+
+-- 研修の階: 敵は寝ているあかじくん 2 体だけ。スタートの近くにコーヒーとおにぎり
+function Run:setupTraining()
+	self.monsters = {}
+	self.traps = {}
+	self.f.traps = self.traps
+	local placed = 0
+	for _, r in self.f.rooms do
+		if placed >= 2 then
+			break
+		end
+		if not MapGen.roomAt(self.f, self.px, self.py) or MapGen.roomAt(self.f, self.px, self.py) ~= r then
+			local x, y = r.x + math.floor(r.w / 2), r.y + math.floor(r.h / 2)
+			if not self:occupied(x, y) and not (self.f.stairs.X == x and self.f.stairs.Y == y) then
+				local m = self:spawnMonster(Monsters.BY_ID.akaji, x, y, true)
+				m.hpMax = 5
+				m.hp = 5
+				m.atk = 1
+				placed += 1
+			end
+		end
+	end
+	for _, id in { "coffee", "onigiri" } do
+		local x, y = self:freeNear(self.px + 1, self.py)
+		if not self:itemAt(x, y) then
+			table.insert(self.items, { x = x, y = y, inst = Items.make(self.rng, Items.BY_ID[id], 1) })
+		end
+	end
+end
+
+-- 1 回だけ出すヒント（研修中だけ）
+function Run:hint(id: string, text: string)
+	if not self.training or self.hints[id] then
+		return
+	end
+	self.hints[id] = true
+	self:say(text)
+end
+
+-- ダッシュ: 何か起きるまで同じ向きに歩き続ける
+function Run:dash(dir: number): boolean
+	if self.ended then
+		return false
+	end
+	local function seenMonsters(): number
+		local n = 0
+		for _, m in self.monsters do
+			if self:canSeeMonster(m) then
+				n += 1
+			end
+		end
+		return n
+	end
+	local startSeen = seenMonsters()
+	local moved = false
+	for _ = 1, 40 do
+		local hpBefore = self.hp
+		local roomBefore = MapGen.roomAt(self.f, self.px, self.py)
+		local evBefore = #self.events
+		local ox, oy = self.px, self.py
+		local d = DIRS[dir]
+		-- 目の前に敵がいたら止まる（攻撃はしない）
+		if self:monsterAt(self.px + d[1], self.py + d[2]) then
+			break
+		end
+		if not self:step(dir) then
+			break
+		end
+		moved = true
+		if self.ended or self.hp < hpBefore then
+			break
+		end
+		if ox == self.px and oy == self.py then
+			break -- 居眠りなどで動けなかった
+		end
+		-- 何か起きた（拾った・罠・レベルアップ・階が変わった）
+		for i = evBefore + 1, #self.events do
+			local t = self.events[i].t
+			if t == "pickup" or t == "trap" or t == "levelup" or t == "floor" or t == "mhouse" then
+				return true
+			end
+		end
+		if seenMonsters() > startSeen then
+			break
+		end
+		if self.f.stairs.X == self.px and self.f.stairs.Y == self.py then
+			break
+		end
+		if self.shop and math.abs(self.shop.x - self.px) <= 1 and math.abs(self.shop.y - self.py) <= 1 then
+			break
+		end
+		if self:itemAt(self.px, self.py) then
+			break
+		end
+		local roomNow = MapGen.roomAt(self.f, self.px, self.py)
+		if roomNow ~= roomBefore then
+			break -- 部屋に入った／出た
+		end
+		if not roomNow then
+			-- 通路: 分かれ道か曲がり角で止まる
+			local ways = 0
+			for k, dd in DIRS do
+				if k ~= ((dir + 1) % 4) + 1 and self:walkable(self.px + dd[1], self.py + dd[2]) then
+					ways += 1
+				end
+			end
+			local d2 = DIRS[dir]
+			if ways ~= 1 or not self:walkable(self.px + d2[1], self.py + d2[2]) then
+				break
+			end
+		end
+	end
+	return moved
 end
 
 -- 監査室（モンスターハウス）に足を踏み入れたら、中の敵が一斉に起きる
@@ -420,6 +552,7 @@ function Run:pickup(it, idx)
 	if def.kind == "yen" then
 		local n = it.inst.amount * (self:hasAcc("moreYen") and 2 or 1)
 		self.yen += n
+		self.picked_yen += n
 		table.remove(self.items, idx)
 		self:say(n .. " 円を拾った")
 		self:ev({ t = "pickup", x = it.x, y = it.y, yen = n })
@@ -431,7 +564,9 @@ function Run:pickup(it, idx)
 	end
 	table.remove(self.items, idx)
 	table.insert(self.inv, it.inst)
+	self.picked += 1
 	self:say(Items.displayName(it.inst, self.known, self.aliases) .. " を拾った")
+	self:hint("item", "先輩ミサキ「拾った物は『持ち物』（△ / I）で使えるよ。？の付いた物は使うまで正体不明！」")
 	self:ev({ t = "pickup", x = it.x, y = it.y })
 end
 

@@ -58,6 +58,11 @@ function Profile.load(player: Player)
 		kills = 0,
 		loaded = false,
 		history = {}, -- 直近の周 { floor, result, kills, yen }
+		loginDay = 0,
+		streak = 0,
+		mDay = 0, -- 今日のお題の日
+		mProg = 0,
+		mDone = false,
 	}
 	if store then
 		local ok, saved = pcall(function()
@@ -72,6 +77,16 @@ function Profile.load(player: Player)
 			end
 		end
 	end
+	-- ログインボーナス（日付が変わって初めて来た時）
+	local day = today()
+	d.loginBonus = 0
+	if d.loginDay ~= day then
+		d.streak = (d.loginDay == day - 1) and (d.streak or 0) + 1 or 1
+		d.loginDay = day
+		d.loginBonus = Config.LOGIN_BONUS + Config.LOGIN_BONUS_STEP * (math.min(d.streak, 6) - 1)
+		d.yen += d.loginBonus
+	end
+	Profile.resetMission(d)
 	local stats = Instance.new("Folder")
 	stats.Name = "leaderstats"
 	local rank = Instance.new("StringValue")
@@ -87,7 +102,45 @@ function Profile.load(player: Player)
 	return d
 end
 
--- 1 周の結果を記録。戻り値: 新しいランク番号（上がった時だけ）か nil
+-- 今日のお題（日替わり）
+function Profile.mission(d)
+	local m = Config.MISSIONS[(today() % #Config.MISSIONS) + 1]
+	return m
+end
+function Profile.resetMission(d)
+	if d.mDay ~= today() then
+		d.mDay = today()
+		d.mProg = 0
+		d.mDone = false
+	end
+end
+-- お題を進める。達成したら報酬を足して true
+local function advanceMission(d, result)
+	Profile.resetMission(d)
+	if d.mDone then
+		return false
+	end
+	local m = Profile.mission(d)
+	if m.id == "kills" then
+		d.mProg += result.kills or 0
+	elseif m.id == "floor" then
+		d.mProg = math.max(d.mProg, result.floor or 0)
+	elseif m.id == "yen" then
+		d.mProg += result.yen or 0
+	elseif m.id == "runs" then
+		d.mProg += 1
+	elseif m.id == "items" then
+		d.mProg += result.picked or 0
+	end
+	if d.mProg >= m.goal then
+		d.mDone = true
+		d.yen += m.reward
+		return true
+	end
+	return false
+end
+
+-- 1 周の結果を記録。戻り値: 新しいランク番号（上がった時だけ）か nil, お題を達成したか
 function Profile.finishRun(player: Player, result)
 	local d = data[player]
 	if not d then
@@ -116,12 +169,13 @@ function Profile.finishRun(player: Player, result)
 	while #d.history > 10 do
 		table.remove(d.history)
 	end
+	local missionDone = advanceMission(d, result)
 	push(player)
 	local after = Config.rankFor(d.points)
 	if after > before then
-		return after
+		return after, missionDone
 	end
-	return nil
+	return nil, missionDone
 end
 
 function Profile.dailyDone(player: Player): boolean
@@ -166,6 +220,13 @@ function Profile.snapshot(player: Player)
 		dailyBest = d.dailyBest,
 		cleared = d.cleared,
 		kills = d.kills,
+		streak = d.streak,
+		mission = (function()
+			Profile.resetMission(d)
+			local m = Profile.mission(d)
+			return { text = string.format(m.text, m.goal), prog = math.min(d.mProg, m.goal), goal = m.goal, done = d.mDone, reward = m.reward }
+		end)(),
+		protectLeft = math.max(0, Config.PROTECT_RUNS - d.runs),
 	}
 end
 
@@ -176,7 +237,7 @@ function Profile.save(player: Player)
 	end
 	local payload = {}
 	for k, v in d do
-		if k ~= "stats" and k ~= "loaded" then
+		if k ~= "stats" and k ~= "loaded" and k ~= "loginBonus" then
 			payload[k] = v
 		end
 	end

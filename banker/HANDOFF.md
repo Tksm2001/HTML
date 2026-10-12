@@ -122,3 +122,6 @@
 - 2026-10-11: **コントローラー対応**（PS5 で塔に入ると操作できないと報告）。Dungeon.client: 左スティック/十字キーで歩く、L2+方向で向きだけ、×(A) のぼる、□(X) まつ、△(Y) 持ち物（ContextActionService、塔の中だけ）。`Gamepad.client.luau`: メニューが開いたら最初のボタンを GuiService.SelectedObject に、○(B) で閉じる。公開版 v11。実機のコントローラーでは未検証（Studio では割り当てとキーボード操作のみ確認）
 - 2026-10-11（公開版 v14）: 利用者の PS5 フィードバック対応。□ まつ・R1 塔内売店（ゲームパッドは UserInputService.InputBegan で処理し、パネル表示中は無視）／モンスターハウス（監査室に入ると全員起床＋「！！監査室！！」＋専用 BGM `bgm_mhouse`、全滅で解除。`Run:checkMonsterHouse / updateMonsterHouse`、snapshot.mhouse）／防具マイナス廃止（Items.make の −1、ワニの rust → bite: 25% で 1.6 倍）／ミニマップ（RunUI 上部中央、半透明、行った所だけ、スマホは 3px/マス）／レベルアップ効果音を numpy で合成（`publish/se/make_levelup.py` → se_levelup.mp3）
 - 2026-10-12（公開版 v15）: 持ち物の上限 16 → 20（`Config.INVENTORY_MAX`）。利用者の希望
+- 2026-10-12（公開版 v16）: 改善案を反映。ダッシュ（Ctrl / R2 / 画面の「走」+方向。`Run:dash`: 敵が見えた・拾った・罠・部屋の出入り・分かれ道で止まる）／新人研修（初回 1〜2F は寝た弱いあかじくん 2 体だけ・罠なし・階段が最初から見える・回復を近くに・ヒント。最初の 2 周は倒れても持ち物が残る `Config.PROTECT_RUNS`）／ログインボーナス（200 円 + 連続日数 ×100、最大 700）／今日のお題（`Config.MISSIONS` 日替わり 5 種、オフィス左上に表示、達成で円）／戦闘の手応え（斬撃の光・ヒットストップ 0.07 秒・被弾で画面の揺れ）
+- Creator Hub: ジャンル RPG ＞ ターン制RPG（次の変更は 11/7 以降）、多言語化に 10 言語追加・自動テキスト抽出オン・翻訳テキスト使用オン。**言語ごとの自動翻訳スイッチは未設定**（文字列が抽出されるまで出てこない様子。数日後に再確認）。「API サービスへの Studio アクセス」をオン
+- 未確認: 本番の保存（Studio が GPU の Device removed で 2 回落ちたため。GPU が空いた時に Play 2 回で runs が増えるか確認する）

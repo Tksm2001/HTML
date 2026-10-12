@@ -474,6 +474,28 @@ local function floatText(pos: Vector3, text: string, color: Color3, big: boolean
 	end)
 end
 
+local shake = 0 -- 画面の揺れ（秒）
+local shakePower = 0
+local hitStopUntil = 0
+local function doShake(t: number, power: number)
+	shake = math.max(shake, t)
+	shakePower = math.max(shakePower, power)
+end
+-- 万年筆を振った光（主役の前に白い弧が一瞬）
+local function slash(from: Vector3, to: Vector3)
+	local mid = from:Lerp(to, 0.6) + Vector3.new(0, 2.2, 0)
+	local cf = CFrame.lookAt(mid, mid + (to - from).Unit)
+	for i = 0, 4 do
+		local a = -0.9 + i * 0.45
+		local p = part("Slash", cf * CFrame.Angles(0, 0, a) * CFrame.new(0, 1.0, 0), Vector3.new(0.18, 0.9, 0.08), Color3.fromRGB(255, 250, 220), Enum.Material.Neon)
+		p.Transparency = 0.1 + i * 0.05
+		TweenService:Create(p, TweenInfo.new(0.18), { Transparency = 1, Size = Vector3.new(0.05, 1.3, 0.05) }):Play()
+		task.delay(0.2, function()
+			p:Destroy()
+		end)
+	end
+end
+
 local function flash(model: Model?, color: Color3)
 	if not model then
 		return
@@ -541,6 +563,7 @@ local function handleEvents(s)
 			if e.target == "player" then
 				flash(hero, Color3.fromRGB(255, 80, 80))
 				floatText(cellPos(s.px, s.py), "-" .. e.dmg, Color3.fromRGB(255, 90, 90), true)
+				doShake(0.25, math.clamp(e.dmg / 6, 0.25, 1.2))
 			elseif e.target == "intern" and entities.intern then
 				flash(entities.intern.model, Color3.fromRGB(255, 80, 80))
 				floatText(cellPos(s.intern and s.intern.x or s.px, s.intern and s.intern.y or s.py), "-" .. e.dmg, Color3.fromRGB(255, 150, 150))
@@ -549,12 +572,15 @@ local function handleEvents(s)
 				if en then
 					flash(en.model, Color3.fromRGB(255, 255, 255))
 					floatText(en.target.Position, tostring(e.dmg), Color3.fromRGB(255, 240, 120), true)
-					-- 主役が踏み込む（戻りは毎フレームのなめらか化にまかせる）
+					-- 主役が踏み込んで斬る（戻りは毎フレームのなめらか化にまかせる）
 					if e.from == "player" and hero then
 						local dir = (en.target.Position - heroTarget.Position)
 						if dir.Magnitude > 0.1 then
 							hero:PivotTo(hero:GetPivot() + dir.Unit * 1.6)
 						end
+						slash(heroTarget.Position, en.target.Position)
+						hitStopUntil = os.clock() + 0.07
+						doShake(0.1, 0.25)
 					end
 				end
 			end
@@ -635,6 +661,9 @@ RunService.RenderStepped:Connect(function(dt)
 		return
 	end
 	local a = math.min(1, dt * 14)
+	if os.clock() < hitStopUntil then
+		a = 0
+	end
 	for _, c in CollectionService:GetTagged("FloatCoin") do
 		if c.Parent then
 			c.CFrame = c.CFrame * CFrame.Angles(0, dt * 1.5, 0) + Vector3.new(0, math.sin(os.clock() * 2 + c:GetAttribute("Float")) * dt * 0.6, 0)
@@ -661,7 +690,15 @@ RunService.RenderStepped:Connect(function(dt)
 		local hp = heroTarget.Position
 		local want = hp + Vector3.new(0, 30, 20)
 		camPos = camPos and camPos:Lerp(want, math.min(1, dt * 6)) or want
-		cam.CFrame = CFrame.lookAt(camPos, camPos - Vector3.new(0, 30, 20) + Vector3.new(0, 1, 0))
+		local off = Vector3.zero
+		if shake > 0 then
+			shake -= dt
+			off = Vector3.new(math.random() - 0.5, math.random() - 0.5, math.random() - 0.5) * shakePower
+			if shake <= 0 then
+				shakePower = 0
+			end
+		end
+		cam.CFrame = CFrame.lookAt(camPos + off, camPos - Vector3.new(0, 30, 20) + Vector3.new(0, 1, 0) + off * 0.5)
 		cam.FieldOfView = 55
 	end
 end)
@@ -709,6 +746,8 @@ local KEYS = {
 local held: { [number]: boolean } = {}
 local lastStep = 0
 local padFace = false -- L2 を押している間は向きだけ変える
+local padDash = false -- R2 を押している間はダッシュ
+local touchDash = false -- 画面の「走」ボタン（押すたびに切り替え）
 local panelOpen: (() -> boolean)? = nil
 
 local function tryStep(dir)
@@ -728,6 +767,8 @@ local function tryStep(dir)
 	lastStep = os.clock()
 	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or padFace then
 		send("face", dir)
+	elseif UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or padDash or touchDash then
+		send("dash", dir)
 	else
 		send("step", dir)
 	end
@@ -843,6 +884,8 @@ UserInputService.InputChanged:Connect(function(input)
 		end
 	elseif input.KeyCode == Enum.KeyCode.ButtonL2 then
 		padFace = input.Position.Z > 0.5
+	elseif input.KeyCode == Enum.KeyCode.ButtonR2 then
+		padDash = input.Position.Z > 0.5
 	end
 end)
 
@@ -911,6 +954,26 @@ local function padBtn(text, dir, px, py)
 	end)
 	b.MouseLeave:Connect(function()
 		held[dir] = nil
+	end)
+end
+do
+	local b = Instance.new("TextButton")
+	b.Name = "Dash"
+	b.Size = UDim2.fromOffset(54, 54)
+	b.Position = UDim2.fromOffset(58, 58)
+	b.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+	b.BackgroundTransparency = 0.25
+	b.TextColor3 = Color3.fromRGB(255, 255, 255)
+	b.TextScaled = true
+	b.Font = Enum.Font.FredokaOne
+	b.Text = "走"
+	b.Parent = pad
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(1, 0)
+	c.Parent = b
+	b.Activated:Connect(function()
+		touchDash = not touchDash
+		b.BackgroundColor3 = touchDash and Color3.fromRGB(230, 130, 40) or Color3.fromRGB(60, 60, 70)
 	end)
 end
 padBtn("▲", 1, 58, 0)
